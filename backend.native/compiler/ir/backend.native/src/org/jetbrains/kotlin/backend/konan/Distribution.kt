@@ -46,8 +46,8 @@ class Distribution(val targetManager: TargetManager,
 
     val klib = "$konanHome/klib"
     val stdlib = "$klib/common/stdlib"
-    val defaultNatives = "$konanHome/konan/targets/${targetName}/native"
-    val runtime = runtimeFileOverride ?: "$stdlib/targets/${targetName}/native/runtime.bc"
+    val defaultNatives = "$konanHome/konan/targets/$targetName/native"
+    val runtime = runtimeFileOverride ?: "$stdlib/targets/$targetName/native/runtime.bc"
 
     val dependenciesDir = DependencyProcessor.defaultDependenciesRoot.absolutePath
 

@@ -22,12 +22,11 @@ import java.lang.ProcessBuilder.Redirect
 import org.jetbrains.kotlin.konan.file.*
 import org.jetbrains.kotlin.konan.properties.*
 import org.jetbrains.kotlin.konan.target.*
-import org.jetbrains.kotlin.backend.konan.util.listConstructor
-import org.jetbrains.kotlin.backend.konan.util.If
 
 typealias BitcodeFile = String
 typealias ObjectFile = String
 typealias ExecutableFile = String
+typealias StaticLibrary = String
 
 // Use "clang -v -save-temps" to write linkCommand() method 
 // for another implementation of this class.
@@ -60,7 +59,7 @@ internal abstract class PlatformFlags(val properties: KonanProperties) {
     protected fun propertyTargetList(name: String)
         = properties.targetList(name)
 
-    abstract fun filterStaticLibraries(binaries: List<String>): List<String> 
+    abstract fun filterStaticLibraries(binaries: List<String>): List<String>
 
     open fun linkStaticLibraries(binaries: List<String>): List<String> {
         val libraries = filterStaticLibraries(binaries)
@@ -98,7 +97,7 @@ internal open class AndroidPlatform(distribution: Distribution)
 
     override val useCompilerDriverAsLinker: Boolean get() = true
 
-    override fun filterStaticLibraries(binaries: List<String>) 
+    override fun filterStaticLibraries(binaries: List<String>)
         = binaries.filter { it.isUnixStaticLib }
 
     override fun linkCommand(objectFiles: List<ObjectFile>, executable: ExecutableFile, optimize: Boolean, debug: Boolean, dynamic: Boolean): Command {
@@ -131,7 +130,7 @@ internal open class MacOSBasedPlatform(distribution: Distribution)
                 properties.osVersionMin!! + ".0")
     }
 
-    override fun filterStaticLibraries(binaries: List<String>) 
+    override fun filterStaticLibraries(binaries: List<String>)
         = binaries.filter { it.isUnixStaticLib }
 
     override fun linkCommand(objectFiles: List<ObjectFile>, executable: ExecutableFile, optimize: Boolean, debug: Boolean, dynamic: Boolean): Command {
@@ -172,7 +171,7 @@ internal open class LinuxBasedPlatform(val distribution: Distribution)
     private val specificLibs
         = propertyTargetList("abiSpecificLibraries").map { "-L${targetSysRoot}/$it" }
 
-    override fun filterStaticLibraries(binaries: List<String>) 
+    override fun filterStaticLibraries(binaries: List<String>)
         = binaries.filter { it.isUnixStaticLib }
 
     override fun linkCommand(objectFiles: List<ObjectFile>, executable: ExecutableFile, optimize: Boolean, debug: Boolean, dynamic: Boolean): Command {
@@ -231,7 +230,7 @@ internal open class MingwPlatform(distribution: Distribution)
 
     override val useCompilerDriverAsLinker: Boolean get() = true
 
-    override fun filterStaticLibraries(binaries: List<String>) 
+    override fun filterStaticLibraries(binaries: List<String>)
         = binaries.filter { it.isWindowsStaticLib || it.isUnixStaticLib }
 
     override fun linkCommand(objectFiles: List<ObjectFile>, executable: ExecutableFile, optimize: Boolean, debug: Boolean, dynamic: Boolean): Command {
@@ -254,7 +253,7 @@ internal open class WasmPlatform(distribution: Distribution)
 
     override val useCompilerDriverAsLinker: Boolean get() = false
 
-    override fun filterStaticLibraries(binaries: List<String>) 
+    override fun filterStaticLibraries(binaries: List<String>)
         = emptyList<String>()
 
     override fun linkCommand(objectFiles: List<ObjectFile>, executable: ExecutableFile, optimize: Boolean, debug: Boolean, dynamic: Boolean): Command {
@@ -284,14 +283,79 @@ internal open class WasmPlatform(distribution: Distribution)
     }
 }
 
-internal class LinkStage(val context: Context) {
+interface CommandExecutor {
+    fun hostLlvmTool(tool: String, args: List<String>)
 
+    fun targetTool(tool: String, vararg arg: String)
+}
+
+internal class ContextCommandExecutor(val context: Context, val platform: PlatformFlags) : CommandExecutor {
+    val distribution: Distribution = context.config.distribution
+
+    override fun hostLlvmTool(tool: String, args: List<String>) {
+        val absoluteToolName = "${distribution.llvmBin}/$tool"
+        val command = listOf(absoluteToolName) + args
+        runTool(*command.toTypedArray())
+    }
+
+    override fun targetTool(tool: String, vararg arg: String) {
+        val absoluteToolName = "${platform.targetToolchain}/bin/$tool"
+        runTool(absoluteToolName, *arg)
+    }
+
+    private fun runTool(vararg command: String) {
+        val code = executeCommand(*command)
+        if (code != 0) throw KonanExternalToolFailure("The ${command[0]} command returned non-zero exit code: $code.")
+    }
+
+    private fun executeCommand(vararg command: String): Int {
+
+        context.log{""}
+        context.log{command.asList().joinToString(" ")}
+
+        val builder = ProcessBuilder(command.asList())
+
+        // Inherit main process output streams.
+        val isDsymUtil = platform is MacOSBasedPlatform && command[0] == platform.dsymutil
+
+        builder.redirectOutput(Redirect.INHERIT)
+        builder.redirectInput(Redirect.INHERIT)
+        if (!isDsymUtil)
+            builder.redirectError(Redirect.INHERIT)
+
+
+        val process = builder.start()
+        if (isDsymUtil) {
+            /**
+             * llvm-lto has option -alias that lets tool to know which symbol we use instead of _main,
+             * llvm-dsym doesn't have such a option, so we ignore annoying warning manually.
+             */
+            val errorStream = process.errorStream
+            val outputStream = bufferedReader(errorStream)
+            while (true) {
+                val line = outputStream.readLine() ?: break
+                if (!line.contains("warning: could not find object file symbol for symbol _main"))
+                    System.err.println(line)
+            }
+            outputStream.close()
+        }
+        val exitCode = process.waitFor()
+        return exitCode
+    }
+}
+
+/**
+ * Contains information required by compilation and link stages
+ */
+internal class BackendSetup(val context: Context) {
     val config = context.config.configuration
     val target = context.config.targetManager.target
 
-    private val distribution = context.config.distribution
+    val distribution = context.config.distribution
+    val optimize = config.get(KonanConfigKeys.OPTIMIZATION) ?: false
+    val debug = config.get(KonanConfigKeys.DEBUG) ?: false
 
-    private val platform = when (target) {
+    val platform = when (target) {
         KonanTarget.LINUX, KonanTarget.RASPBERRYPI,
         KonanTarget.LINUX_MIPS32, KonanTarget.LINUX_MIPSEL32 ->
             LinuxBasedPlatform(distribution)
@@ -304,34 +368,86 @@ internal class LinkStage(val context: Context) {
         KonanTarget.WASM32 ->
             WasmPlatform(distribution)
     }
+}
 
-    private val optimize = config.get(KonanConfigKeys.OPTIMIZATION) ?: false
-    private val debug = config.get(KonanConfigKeys.DEBUG) ?: false
-    private val dynamic = context.config.produce == CompilerOutputKind.DYNAMIC ||
-            context.config.produce == CompilerOutputKind.FRAMEWORK
-    private val nomain = config.get(KonanConfigKeys.NOMAIN) ?: false
-    private val emitted = context.bitcodeFileName
-    private val libraries = context.llvm.librariesToLink
-    private fun MutableList<String>.addNonEmpty(elements: List<String>) {
-        addAll(elements.filter { !it.isEmpty() })
+internal class CompilationStage(setup: BackendSetup):
+        CommandExecutor by ContextCommandExecutor(setup.context, setup.platform) {
+
+    val context = setup.context
+    val platform = setup.platform
+    val target = setup.target
+    val optimize = setup.optimize
+    val debug = setup.debug
+    val config = setup.config
+
+    fun produceObjectFiles(bitcodeFiles: List<BitcodeFile>): List<ObjectFile> {
+        return listOf(
+                if (target == KonanTarget.WASM32)
+                    bitcodeToWasm(bitcodeFiles)
+                else
+                    llc(opt(link(bitcodeFiles)))
+        )
     }
 
-    private fun llvmLto(files: List<BitcodeFile>): ObjectFile {
-        val combined = temporary("combined", ".o")
+    fun produceStaticLibrary(bitcodeFiles: List<BitcodeFile>, libraryName: String): StaticLibrary =
+            bitcodeFiles.map { llc(opt(it)) }.let { llvmAr(it, libraryName) }
 
-        val tool = distribution.llvmLto
-        val command = mutableListOf(tool, "-o", combined)
-        command.addNonEmpty(platform.llvmLtoFlags)
-        when {
-            optimize -> command.addNonEmpty(platform.llvmLtoOptFlags)
-            debug    -> command.addNonEmpty(platform.llvmDebugOptFlags)
-            else     -> command.addNonEmpty(platform.llvmLtoNooptFlags)
+//    private fun MutableList<String>.addNonEmpty(elements: List<String>) {
+//        addAll(elements.filter { !it.isEmpty() })
+//    }
+
+//    private fun llvmLto(files: List<BitcodeFile>): ObjectFile {
+//        val combined = temporary("combined", ".o")
+//
+//        val args = mutableListOf("-o", combined)
+//        args.addNonEmpty(platform.llvmLtoFlags)
+//        when {
+//            optimize -> args.addNonEmpty(platform.llvmLtoOptFlags)
+//            debug    -> args.addNonEmpty(platform.llvmDebugOptFlags)
+//            else     -> args.addNonEmpty(platform.llvmLtoNooptFlags)
+//        }
+//        args.addNonEmpty(platform.llvmLtoDynamicFlags)
+//        args.addNonEmpty(files)
+//        hostLlvmTool("llvm-lto", args)
+//        return combined
+//    }
+
+    private fun link(files: List<BitcodeFile>): BitcodeFile {
+        val linked = temporary("linked", ".o")
+        val args = listOf(*files.toTypedArray(), "-o", linked)
+        hostLlvmTool("llvm-link", args)
+        return linked
+    }
+
+    private fun llc(file: BitcodeFile): ObjectFile {
+        val compiled = temporary("compiled", ".o")
+        val flags = when {
+            optimize -> platform.llvmLtoOptFlags
+            debug    -> platform.llvmDebugOptFlags
+            else     -> platform.llvmLtoNooptFlags
         }
-        command.addNonEmpty(platform.llvmLtoDynamicFlags)
-        command.addNonEmpty(files)
-        runTool(*command.toTypedArray())
+        val args = listOf(file, *flags.toTypedArray(), "-filetype=obj", "-o", compiled)
+        hostLlvmTool("llc", args)
+        return compiled
+    }
 
-        return combined
+    private fun opt(file: BitcodeFile): BitcodeFile {
+        val optimized = temporary("optimized", ".bc")
+        val flags = when {
+            optimize    -> "-O3"
+            debug       -> "-O0"
+            else        -> "-O1"
+        }
+        val args = listOf(file, flags, "-o", optimized)
+        hostLlvmTool("opt", args)
+        return optimized
+    }
+
+    // TODO: what are the benefits of packing .bc instead of .o?
+    private fun llvmAr(files: List<ObjectFile>, output: ObjectFile): StaticLibrary {
+        val args = listOf("rcs", output, *files.toTypedArray())
+        hostLlvmTool("llvm-ar", args)
+        return output
     }
 
     private fun temporary(name: String, suffix: String): String {
@@ -340,18 +456,7 @@ internal class LinkStage(val context: Context) {
         return temporaryFile.absolutePath
     }
 
-    private fun targetTool(tool: String, vararg arg: String) {
-        val absoluteToolName = "${platform.targetToolchain}/bin/$tool"
-        runTool(absoluteToolName, *arg)
-    }
-
-    private fun hostLlvmTool(tool: String, args: List<String>) {
-        val absoluteToolName = "${distribution.llvmBin}/$tool"
-        val command = listOf(absoluteToolName) + args
-        runTool(*command.toTypedArray())
-    }
-
-    private fun bitcodeToWasm(bitcodeFiles: List<BitcodeFile>): String {
+    fun bitcodeToWasm(bitcodeFiles: List<BitcodeFile>): String {
         val combinedBc = temporary("combined", ".bc")
         hostLlvmTool("llvm-link", bitcodeFiles + listOf("-o", combinedBc))
 
@@ -365,9 +470,34 @@ internal class LinkStage(val context: Context) {
         val combinedWasm = temporary( "combined", ".wasm")
         val combinedSmap = temporary( "combined", ".smap")
         targetTool("wasm-as", combinedWast, "-o", combinedWasm, "-g", "-s", combinedSmap)
-
         return combinedWasm
     }
+}
+
+
+internal fun compileObjectFiles(context: Context, bitcodeFiles: List<BitcodeFile>): List<ObjectFile> {
+    return CompilationStage(BackendSetup(context)).produceObjectFiles(bitcodeFiles)
+}
+
+internal fun compileStaticLibrary(context: Context, bitcodeFiles: List<BitcodeFile>, libraryName: String): StaticLibrary {
+    return CompilationStage(BackendSetup(context)).produceStaticLibrary(bitcodeFiles, libraryName)
+}
+
+internal class LinkStage(setup: BackendSetup) {
+
+    val context = setup.context
+    val platform = setup.platform
+    val target = setup.target
+    val optimize = setup.optimize
+    val debug = setup.debug
+    val config = setup.config
+
+    private val dynamic = context.config.produce == CompilerOutputKind.DYNAMIC ||
+            context.config.produce == CompilerOutputKind.FRAMEWORK
+
+
+    private val nomain = config.get(KonanConfigKeys.NOMAIN) ?: false
+    private val libraries = context.llvm.librariesToLink
 
     private fun asLinkerArgs(args: List<String>): List<String> {
         if (platform.useCompilerDriverAsLinker) {
@@ -435,72 +565,16 @@ internal class LinkStage(val context: Context) {
         return executable
     }
 
-    private fun executeCommand(vararg command: String): Int {
+    fun linkStage(objectFiles: List<String>) {
+        context.log{"# Compiler root: ${context.config.distribution.konanHome}"}
 
-        context.log{""}
-        context.log{command.asList<String>().joinToString(" ")}
+        val includedBinaries =
+            libraries.map{ it.includedPaths}.flatten()
 
-        val builder = ProcessBuilder(command.asList())
+        val libraryProvidedLinkerFlags =
+            libraries.map{ it.linkerOpts }.flatten()
 
-        // Inherit main process output streams.
-        val isDsymUtil = platform is MacOSBasedPlatform && command[0] == platform.dsymutil
-
-        builder.redirectOutput(Redirect.INHERIT)
-        builder.redirectInput(Redirect.INHERIT)
-        if (!isDsymUtil)
-            builder.redirectError(Redirect.INHERIT)
-
-
-        val process = builder.start()
-        if (isDsymUtil) {
-            /**
-             * llvm-lto has option -alias that lets tool to know which symbol we use instead of _main,
-             * llvm-dsym doesn't have such a option, so we ignore annoying warning manually.
-             */
-            val errorStream = process.errorStream
-            val outputStream = bufferedReader(errorStream)
-            while (true) {
-                val line = outputStream.readLine() ?: break
-                if (!line.contains("warning: could not find object file symbol for symbol _main"))
-                    System.err.println(line)
-            }
-            outputStream.close()
-        }
-        val exitCode = process.waitFor()
-        return exitCode
-    }
-
-    private fun runTool(vararg command: String) {
-        val code = executeCommand(*command)
-        if (code != 0) throw KonanExternalToolFailure("The ${command[0]} command returned non-zero exit code: $code.")
-    }
-
-    fun linkStage() {
-        context.log{"# Compiler root: ${distribution.konanHome}"}
-
-        val bitcodeFiles = listOf(emitted) +
-            libraries.map{it -> it.bitcodePaths}.flatten()
-
-        val includedBinaries = 
-            libraries.map{it -> it.includedPaths}.flatten()
-
-        val libraryProvidedLinkerFlags = 
-            libraries.map{it -> it.linkerOpts}.flatten()
-
-        var objectFiles: List<String> = listOf()
-
-        val phaser = PhaseManager(context)
-        phaser.phase(KonanPhase.OBJECT_FILES) {
-            objectFiles = listOf( 
-                if (target == KonanTarget.WASM32)
-                    bitcodeToWasm(bitcodeFiles) 
-                else 
-                    llvmLto(bitcodeFiles)
-            )
-        }
-        phaser.phase(KonanPhase.LINKER) {
-            link(objectFiles, includedBinaries, libraryProvidedLinkerFlags)
-        }
+        link(objectFiles, includedBinaries, libraryProvidedLinkerFlags)
     }
 }
 

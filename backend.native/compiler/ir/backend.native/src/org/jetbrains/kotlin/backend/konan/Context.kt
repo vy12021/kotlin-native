@@ -227,7 +227,6 @@ internal class Context(config: KonanConfig) : KonanBackendContext(config) {
     lateinit var llvm: Llvm
     lateinit var llvmDeclarations: LlvmDeclarations
     lateinit var bitcodeFileName: String
-    lateinit var library: KonanLibraryWriter
 
     var phase: KonanPhase? = null
     var depth: Int = 0
@@ -353,7 +352,7 @@ internal class Context(config: KonanConfig) : KonanBackendContext(config) {
     }
 
     fun shouldPrintBitCode(): Boolean {
-        return config.configuration.getBoolean(KonanConfigKeys.PRINT_BITCODE) 
+        return config.configuration.getBoolean(KonanConfigKeys.PRINT_BITCODE)
     }
 
     fun shouldPrintLocations(): Boolean {
@@ -371,7 +370,7 @@ internal class Context(config: KonanConfig) : KonanBackendContext(config) {
     fun shouldGenerateTestRunner(): Boolean = config.configuration.getBoolean(KonanConfigKeys.GENERATE_TEST_RUNNER)
 
     override fun log(message: () -> String) {
-        if (phase?.verbose ?: false) {
+        if (phase?.verbose == true) {
             println(message())
         }
     }
@@ -381,5 +380,11 @@ internal class Context(config: KonanConfig) : KonanBackendContext(config) {
     val isDynamicLibrary: Boolean by lazy {
         config.configuration.get(KonanConfigKeys.PRODUCE) == CompilerOutputKind.DYNAMIC
     }
+
+    val isKlib: Boolean by lazy {
+        config.configuration.get(KonanConfigKeys.PRODUCE) == CompilerOutputKind.LIBRARY
+    }
+
+    lateinit var backendProducer: CompilerOutputProducer
 }
 

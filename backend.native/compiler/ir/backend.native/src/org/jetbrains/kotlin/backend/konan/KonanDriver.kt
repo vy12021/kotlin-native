@@ -92,7 +92,7 @@ fun runTopLevelPhases(konanConfig: KonanConfig, environment: KotlinCoreEnvironme
         }
         phaser.phase(KonanPhase.BITCODE) {
             emitLLVM(context)
-            produceOutput(context)
+            createOutputProducer(context)
         }
         // We always verify bitcode to prevent hard to debug bugs.
         context.verifyBitCode()
@@ -102,8 +102,7 @@ fun runTopLevelPhases(konanConfig: KonanConfig, environment: KotlinCoreEnvironme
         }
     }
 
-    phaser.phase(KonanPhase.LINK_STAGE) {
-        LinkStage(context).linkStage()
-    }
+    context.backendProducer.produce()
 }
+
 

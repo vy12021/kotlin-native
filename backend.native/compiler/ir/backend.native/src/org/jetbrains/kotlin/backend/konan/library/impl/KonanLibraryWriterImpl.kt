@@ -135,11 +135,12 @@ internal fun buildLibrary(
 
     val library = LibraryWriterImpl(output, moduleName, abiVersion, target, nopack)
 
-    library.addKotlinBitcode(llvmModule)
+    LLVMWriteBitcodeToFile(llvmModule, library.mainBitcodeFileName)
+
     library.addLinkData(linkData)
-    natives.forEach {
-        library.addNativeBitcode(it)
-    }
+//    natives.forEach {
+//        library.addNativeBitcode(it)
+//    }
     included.forEach {
         library.addIncludedBinary(it)
     }
@@ -148,7 +149,6 @@ internal fun buildLibrary(
     escapeAnalysis?.let { library.addEscapeAnalysis(it) }
     dataFlowGraph?.let { library.addDataFlowGraph(it) }
 
-    library.commit()
     return library
 }
 
