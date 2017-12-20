@@ -23,10 +23,11 @@ internal class BitcodeProducer(override val context: Context) : CompilerOutputPr
 
         val output = context.config.outputFile
         LLVMWriteBitcodeToFile(llvmModule, output)
-        context.bitcodeFileName = output
     }
 }
 
+
+// TODO: library extension should be platform dependent
 internal class LibraryProducer(override val context: Context) : CompilerOutputProducer {
 
     private val phaser = PhaseManager(context)
@@ -37,8 +38,7 @@ internal class LibraryProducer(override val context: Context) : CompilerOutputPr
         val config = context.config.configuration
         val libraryName = context.config.moduleId
 
-
-        context.bitcodeFileName = produceLibrary(context, config, llvmModule)
+        val bitcode  = produceLibrary(context, config, llvmModule)
 
         phaser.phase(KonanPhase.OBJECT_FILES) {
             // stubs
@@ -46,7 +46,7 @@ internal class LibraryProducer(override val context: Context) : CompilerOutputPr
                 val stubs = compileStaticLibrary(context, listOf(it), File(it).name + ".a")
                 library.addIncludedBinary(stubs)
             }
-            val staticLib = compileStaticLibrary(context, listOf(context.bitcodeFileName),libraryName + ".a")
+            val staticLib = compileStaticLibrary(context, listOf(bitcode),libraryName + ".a")
             library.addIncludedBinary(staticLib)
         }
 
@@ -102,11 +102,11 @@ internal class ProgramProducer(override val context: Context) : CompilerOutputPr
         } else {
             emptyList()
         }
-        context.bitcodeFileName = produceProgram(context, tempFiles, llvmModule, bitcodeFiles)
+        val programBitcode = produceProgram(context, tempFiles, llvmModule, bitcodeFiles)
 
         lateinit var objectFiles: List<ObjectFile>
         phaser.phase(KonanPhase.OBJECT_FILES) {
-            objectFiles = compileObjectFiles(context, listOf(context.bitcodeFileName))
+            objectFiles = compileObjectFiles(context, listOf(programBitcode))
         }
         phaser.phase(KonanPhase.LINK_STAGE) {
             LinkStage(BackendSetup(context)).linkStage(objectFiles)
@@ -115,8 +115,7 @@ internal class ProgramProducer(override val context: Context) : CompilerOutputPr
 
     private fun produceProgram(context: Context, tempFiles: TempFiles, llvmModule: LLVMModuleRef,
                                generatedBitcodeFiles: List<String> = emptyList()): String {
-        val nativeLibraries =
-                context.config.nativeLibraries +
+        val nativeLibraries = context.config.nativeLibraries +
                         context.config.defaultNativeLibraries +
                         generatedBitcodeFiles
 

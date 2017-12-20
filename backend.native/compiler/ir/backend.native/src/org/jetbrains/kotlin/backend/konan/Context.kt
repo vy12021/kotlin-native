@@ -226,7 +226,6 @@ internal class Context(config: KonanConfig) : KonanBackendContext(config) {
 
     lateinit var llvm: Llvm
     lateinit var llvmDeclarations: LlvmDeclarations
-    lateinit var bitcodeFileName: String
 
     var phase: KonanPhase? = null
     var depth: Int = 0
@@ -379,10 +378,6 @@ internal class Context(config: KonanConfig) : KonanBackendContext(config) {
 
     val isDynamicLibrary: Boolean by lazy {
         config.configuration.get(KonanConfigKeys.PRODUCE) == CompilerOutputKind.DYNAMIC
-    }
-
-    val isKlib: Boolean by lazy {
-        config.configuration.get(KonanConfigKeys.PRODUCE) == CompilerOutputKind.LIBRARY
     }
 
     lateinit var backendProducer: CompilerOutputProducer

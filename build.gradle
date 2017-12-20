@@ -267,7 +267,10 @@ targetList.each { target ->
         dependsOn ":backend.native:${target}Start"
 
         destinationDir distDir
-
+        from(project(':runtime').file("build/$target")) {
+            include("runtime.a")
+            into("$stdlib/targets/$target/included")
+        }
         from(project(':runtime').file("build/$target")) {
             include("runtime.bc")
             into("$stdlib/targets/$target/native")
