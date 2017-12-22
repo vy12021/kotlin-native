@@ -50,7 +50,7 @@ internal abstract class PlatformFlags(val properties: KonanProperties) {
     open val useCompilerDriverAsLinker: Boolean get() = false // TODO: refactor.
 
     abstract fun linkCommand(objectFiles: List<ObjectFile>,
-                             executable: ExecutableFile, optimize: Boolean, debug: Boolean, dynamic: Boolean): Command
+                             executable: ExecutableFile, optimize: Boolean, debug: Boolean, dynamic: Boolean, staticLibraries: List<StaticLibrary>): Command
 
     open fun linkCommandSuffix(): List<String> = emptyList()
 
@@ -100,7 +100,7 @@ internal open class AndroidPlatform(distribution: Distribution)
     override fun filterStaticLibraries(binaries: List<String>)
         = binaries.filter { it.isUnixStaticLib }
 
-    override fun linkCommand(objectFiles: List<ObjectFile>, executable: ExecutableFile, optimize: Boolean, debug: Boolean, dynamic: Boolean): Command {
+    override fun linkCommand(objectFiles: List<ObjectFile>, executable: ExecutableFile, optimize: Boolean, debug: Boolean, dynamic: Boolean, staticLibraries: List<StaticLibrary>): Command {
         // liblog.so must be linked in, as we use its functionality in runtime.
         return Command(clang).apply {
             + "-o"
@@ -133,7 +133,7 @@ internal open class MacOSBasedPlatform(distribution: Distribution)
     override fun filterStaticLibraries(binaries: List<String>)
         = binaries.filter { it.isUnixStaticLib }
 
-    override fun linkCommand(objectFiles: List<ObjectFile>, executable: ExecutableFile, optimize: Boolean, debug: Boolean, dynamic: Boolean): Command {
+    override fun linkCommand(objectFiles: List<ObjectFile>, executable: ExecutableFile, optimize: Boolean, debug: Boolean, dynamic: Boolean, staticLibraries: List<StaticLibrary>): Command {
         return object : Command(linker){
             override fun execute() {
                 super.execute()
@@ -142,7 +142,7 @@ internal open class MacOSBasedPlatform(distribution: Distribution)
             }
         }.apply {
             + "-demangle"
-            + listOf("-object_path_lto", "temporary.o", "-lto_library", libLTO)
+//            + listOf("-object_path_lto", "temporary.o", "-lto_library", libLTO)
             + listOf("-dynamic", "-arch", propertyTargetString("arch"))
             + osVersionMin
             + listOf("-syslibroot", targetSysRoot, "-o", executable)
@@ -174,7 +174,7 @@ internal open class LinuxBasedPlatform(val distribution: Distribution)
     override fun filterStaticLibraries(binaries: List<String>)
         = binaries.filter { it.isUnixStaticLib }
 
-    override fun linkCommand(objectFiles: List<ObjectFile>, executable: ExecutableFile, optimize: Boolean, debug: Boolean, dynamic: Boolean): Command {
+    override fun linkCommand(objectFiles: List<ObjectFile>, executable: ExecutableFile, optimize: Boolean, debug: Boolean, dynamic: Boolean, staticLibraries: List<StaticLibrary>): Command {
         val isMips = (distribution.target == KonanTarget.LINUX_MIPS32 ||
                 distribution.target == KonanTarget.LINUX_MIPSEL32)
         // TODO: Can we extract more to the konan.properties?
@@ -191,6 +191,7 @@ internal open class LinuxBasedPlatform(val distribution: Distribution)
             + propertyTargetString("dynamicLinker")
             + "-o"
             + executable
+            + staticLibraries
             if (!dynamic) + "$targetSysRoot/usr/lib64/crt1.o"
             + "$targetSysRoot/usr/lib64/crti.o"
             if (dynamic)
@@ -233,7 +234,7 @@ internal open class MingwPlatform(distribution: Distribution)
     override fun filterStaticLibraries(binaries: List<String>)
         = binaries.filter { it.isWindowsStaticLib || it.isUnixStaticLib }
 
-    override fun linkCommand(objectFiles: List<ObjectFile>, executable: ExecutableFile, optimize: Boolean, debug: Boolean, dynamic: Boolean): Command {
+    override fun linkCommand(objectFiles: List<ObjectFile>, executable: ExecutableFile, optimize: Boolean, debug: Boolean, dynamic: Boolean, staticLibraries: List<StaticLibrary>): Command {
         return Command(linker).apply {
             + listOf("-o", executable)
             + objectFiles
@@ -256,7 +257,7 @@ internal open class WasmPlatform(distribution: Distribution)
     override fun filterStaticLibraries(binaries: List<String>)
         = emptyList<String>()
 
-    override fun linkCommand(objectFiles: List<ObjectFile>, executable: ExecutableFile, optimize: Boolean, debug: Boolean, dynamic: Boolean): Command {
+    override fun linkCommand(objectFiles: List<ObjectFile>, executable: ExecutableFile, optimize: Boolean, debug: Boolean, dynamic: Boolean, staticLibraries: List<StaticLibrary>): Command {
         return object: Command("") {
             override fun execute() {
                 val src = File(objectFiles.single())
@@ -548,13 +549,13 @@ internal class LinkStage(setup: BackendSetup) {
         }
 
         try {
-            platform.linkCommand(objectFiles, executable, optimize, debug, dynamic).apply {
+            val staticLibs = platform.linkStaticLibraries(includedBinaries)
+            platform.linkCommand(objectFiles, executable, optimize, debug, dynamic, staticLibs).apply {
                 + platform.targetLibffi
                 + asLinkerArgs(config.getNotNull(KonanConfigKeys.LINKER_ARGS))
                 + entryPointSelector
                 + frameworkLinkerArgs
                 + platform.linkCommandSuffix()
-                + platform.linkStaticLibraries(includedBinaries)
                 + libraryProvidedLinkerFlags
                 externalLibraries(includedBinaries)
             }.execute()
