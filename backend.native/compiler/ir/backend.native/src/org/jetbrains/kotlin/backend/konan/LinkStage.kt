@@ -142,11 +142,12 @@ internal open class MacOSBasedPlatform(distribution: Distribution)
             }
         }.apply {
             + "-demangle"
-//            + listOf("-object_path_lto", "temporary.o", "-lto_library", libLTO)
+            + listOf("-object_path_lto", "temporary.o", "-lto_library", libLTO)
             + listOf("-dynamic", "-arch", propertyTargetString("arch"))
             + osVersionMin
             + listOf("-syslibroot", targetSysRoot, "-o", executable)
             + objectFiles
+            + staticLibraries
             if (optimize) + linkerOptimizationFlags
             if (!debug) + linkerNoDebugFlags
             if (dynamic) + linkerDynamicFlags
@@ -383,10 +384,11 @@ internal class CompilationStage(setup: BackendSetup):
 
     fun produceObjectFiles(bitcodeFiles: List<BitcodeFile>): List<ObjectFile> {
         return listOf(
-                if (target == KonanTarget.WASM32)
-                    bitcodeToWasm(bitcodeFiles)
-                else
-                    llc(opt(link(bitcodeFiles)))
+                when {
+                    target == KonanTarget.WASM32 -> bitcodeToWasm(bitcodeFiles)
+                    bitcodeFiles.size == 1 -> llc(opt(bitcodeFiles[0]))
+                    else -> llc(opt(link(bitcodeFiles)))
+                }
         )
     }
 

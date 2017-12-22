@@ -1,9 +1,0 @@
-depends = ApplicationServices CFNetwork CoreData CoreFoundation CoreGraphics CoreImage CoreServices CoreText CoreVideo DiskArbitration Foundation IOKit IOSurface ImageIO Metal OpenGLCommon QuartzCore Security libkern osx posix
-language = Objective-C
-package = platform.AppKit
-headers = AppKit/AppKit.h
-
-headerFilter = AppKit/**
-
-compilerOpts = -framework AppKit
-linkerOpts = -framework AppKit
