@@ -18,10 +18,9 @@ package org.jetbrains.kotlin.backend.konan.llvm
 
 import kotlinx.cinterop.*
 import llvm.*
-import org.jetbrains.kotlin.backend.konan.Context
-import org.jetbrains.kotlin.backend.konan.KonanConfigKeys
+import org.jetbrains.kotlin.backend.common.descriptors.allParameters
+import org.jetbrains.kotlin.backend.konan.*
 import org.jetbrains.kotlin.backend.konan.descriptors.*
-import org.jetbrains.kotlin.backend.konan.isKotlinObjCClass
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.serialization.deserialization.descriptors.*
 import org.jetbrains.kotlin.ir.IrElement
@@ -400,6 +399,12 @@ private class DeclarationsGeneratorVisitor(override val context: Context) :
                 "kfun:" + qualifyInternalName(descriptor)
             }
             LLVMAddFunction(context.llvmModule, symbolName, llvmFunctionType)!!
+        }
+
+        declaration.descriptor.allParameters.forEachIndexed { idx, param ->
+            if (param.type.correspondingValueType?.shouldBeSignExtended() == true) {
+                addFunctionArgumentAttribute(llvmFunction, idx, "signext")
+            }
         }
 
         if (!context.config.configuration.getBoolean(KonanConfigKeys.OPTIMIZATION)) {

@@ -303,6 +303,19 @@ fun setFunctionNoUnwind(function: LLVMValueRef) {
     LLVMAddAttributeAtIndex(function, LLVMAttributeFunctionIndex, attribute)
 }
 
+fun addFunctionArgumentAttribute(function: LLVMValueRef, argumentIdx: Int, attributeName: String) {
+    val attributeKind = getAttributeKindId(attributeName)
+    val attribute = LLVMCreateEnumAttribute(LLVMGetTypeContext(function.type), attributeKind, 0)!!
+    // Argument with 0 index is return value so function parameters are 1-based
+    LLVMAddAttributeAtIndex(function, argumentIdx + 1, attribute)
+}
+
+fun addCallSiteArgumentAttribute(callSite: LLVMValueRef, function: LLVMValueRef, argumentIdx: Int, attributeName: String) {
+    val attributeKind = getAttributeKindId(attributeName)
+    val attribute = LLVMCreateEnumAttribute(LLVMGetTypeContext(function.type), attributeKind, 0)!!
+    LLVMAddCallSiteAttribute(callSite, argumentIdx + 1, attribute)
+}
+
 internal fun String.mdString() = LLVMMDString(this, this.length)!!
 internal fun node(vararg it:LLVMValueRef) = LLVMMDNode(it.toList().toCValues(), it.size)
 

@@ -24,10 +24,8 @@ import org.jetbrains.kotlin.backend.common.ir.ir2string
 import org.jetbrains.kotlin.backend.konan.*
 import org.jetbrains.kotlin.backend.konan.descriptors.*
 import org.jetbrains.kotlin.backend.konan.ir.*
-import org.jetbrains.kotlin.backend.konan.library.impl.buildLibrary
 import org.jetbrains.kotlin.backend.konan.objcexport.ObjCExport
 import org.jetbrains.kotlin.backend.konan.optimizations.*
-import org.jetbrains.kotlin.backend.konan.util.getValueOrNull
 import org.jetbrains.kotlin.builtins.KotlinBuiltIns
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.incremental.components.NoLookupLocation
@@ -113,7 +111,7 @@ internal fun verifyModule(llvmModule: LLVMModuleRef, current: String = "") {
                 llvmModule, LLVMVerifierFailureAction.LLVMPrintMessageAction, errorRef.ptr) == 1) {
             if (current.isNotEmpty())
                 println("Error in $current")
-            LLVMDumpModule(llvmModule)
+//            LLVMDumpModule(llvmModule)
             throw Error("Invalid module")
         }
     }
@@ -1658,6 +1656,8 @@ internal class CodeGeneratorVisitor(val context: Context, val lifetimes: Map<IrE
 
         val args = evaluateExplicitArgs(value)
 
+
+
         compileTimeEvaluate(value, args)?.let { return it }
 
         debugLocation(value)
@@ -1909,10 +1909,10 @@ internal class CodeGeneratorVisitor(val context: Context, val lifetimes: Map<IrE
             return evaluateIntrinsicCall(callee, argsWithContinuationIfNeeded)
         }
 
-        when (descriptor) {
-            is IrBuiltinOperatorDescriptorBase -> return evaluateOperatorCall      (callee, argsWithContinuationIfNeeded)
-            is ConstructorDescriptor           -> return evaluateConstructorCall   (callee, argsWithContinuationIfNeeded)
-            else                               -> return evaluateSimpleFunctionCall(
+        return when (descriptor) {
+            is IrBuiltinOperatorDescriptorBase -> evaluateOperatorCall      (callee, argsWithContinuationIfNeeded)
+            is ConstructorDescriptor           -> evaluateConstructorCall   (callee, argsWithContinuationIfNeeded)
+            else                               -> evaluateSimpleFunctionCall(
                     descriptor, argsWithContinuationIfNeeded, resultLifetime, callee.superQualifier)
         }
     }
@@ -2352,7 +2352,17 @@ internal class CodeGeneratorVisitor(val context: Context, val lifetimes: Map<IrE
     // However, it currently requires some refactoring to be performed.
     private fun call(descriptor: FunctionDescriptor, function: LLVMValueRef, args: List<LLVMValueRef>,
                      resultLifetime: Lifetime): LLVMValueRef {
-        val result = call(function, args, resultLifetime)
+
+        val callSite = call(function, args, resultLifetime)
+
+        // Adding signext to byte and short arguments at call site
+        descriptor.allParameters.forEachIndexed { idx, param ->
+            if (param.type.correspondingValueType?.shouldBeSignExtended() == true
+                    // Avoid cases like `T : Byte`
+                    && args[idx].type != codegen.kObjHeaderPtr) {
+                addCallSiteArgumentAttribute(callSite, function, idx, "signext")
+            }
+        }
         if (descriptor.returnType?.isNothing() == true) {
             functionGenerationContext.unreachable()
         }
@@ -2361,7 +2371,7 @@ internal class CodeGeneratorVisitor(val context: Context, val lifetimes: Map<IrE
             return codegen.theUnitInstanceRef.llvm
         }
 
-        return result
+        return callSite
     }
 
     private fun call(function: LLVMValueRef, args: List<LLVMValueRef>,

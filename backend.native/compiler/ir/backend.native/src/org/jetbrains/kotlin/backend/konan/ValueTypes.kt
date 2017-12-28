@@ -96,3 +96,9 @@ val KotlinType.correspondingValueType: ValueType?
     get() = ValueType.values().firstOrNull {
         isRepresentedAs(it)
     }
+
+/**
+ * types that should be annotated with signext in LLVM
+ */
+fun ValueType.shouldBeSignExtended(): Boolean =
+        this == ValueType.SHORT || this == ValueType.BYTE
