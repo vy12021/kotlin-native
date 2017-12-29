@@ -162,6 +162,13 @@ fun createTempFile(name: String, suffix: String? = null)
 fun createTempDir(name: String): File 
     = Files.createTempDirectory(name).File()
 
+fun createTempFileName(name: String, suffix: String? = null): File {
+    val tempFile = Files.createTempFile(name, suffix)
+    val path = tempFile.fileName.File()
+    Files.delete(tempFile.toAbsolutePath())
+    return path
+}
+
 private val File.zipUri: URI
         get() = URI.create("jar:${this.toPath().toUri()}")
 

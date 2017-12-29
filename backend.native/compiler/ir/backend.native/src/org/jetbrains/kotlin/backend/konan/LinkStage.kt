@@ -392,8 +392,8 @@ internal class CompilationStage(setup: BackendSetup):
         )
     }
 
-    fun produceStaticLibrary(bitcodeFiles: List<BitcodeFile>, libraryName: String): StaticLibrary =
-            bitcodeFiles.map { llc(opt(it)) }.let { llvmAr(it, libraryName) }
+    fun produceStaticLibrary(bitcodeFiles: List<BitcodeFile>): StaticLibrary =
+            bitcodeFiles.map { llc(opt(it)) }.let { llvmAr(it) }
 
 //    private fun MutableList<String>.addNonEmpty(elements: List<String>) {
 //        addAll(elements.filter { !it.isEmpty() })
@@ -447,7 +447,8 @@ internal class CompilationStage(setup: BackendSetup):
     }
 
     // TODO: what are the benefits of packing .bc instead of .o?
-    private fun llvmAr(files: List<ObjectFile>, output: ObjectFile): StaticLibrary {
+    private fun llvmAr(files: List<ObjectFile>): StaticLibrary {
+        val output = createTempFileName("lib", ".a").absolutePath
         val args = listOf("rcs", output, *files.toTypedArray())
         hostLlvmTool("llvm-ar", args)
         return output
@@ -478,13 +479,13 @@ internal class CompilationStage(setup: BackendSetup):
 }
 
 
-internal fun compileObjectFiles(context: Context, bitcodeFiles: List<BitcodeFile>): List<ObjectFile> {
-    return CompilationStage(BackendSetup(context)).produceObjectFiles(bitcodeFiles)
-}
+internal fun compileObjectFiles(context: Context, bitcodeFiles: List<BitcodeFile>): List<ObjectFile> =
+        CompilationStage(BackendSetup(context)).produceObjectFiles(bitcodeFiles)
 
-internal fun compileStaticLibrary(context: Context, bitcodeFiles: List<BitcodeFile>, libraryName: String): StaticLibrary {
-    return CompilationStage(BackendSetup(context)).produceStaticLibrary(bitcodeFiles, libraryName)
-}
+
+internal fun compileStaticLibrary(context: Context, bitcodeFiles: List<BitcodeFile>): StaticLibrary =
+        CompilationStage(BackendSetup(context)).produceStaticLibrary(bitcodeFiles)
+
 
 internal class LinkStage(setup: BackendSetup) {
 
@@ -498,7 +499,6 @@ internal class LinkStage(setup: BackendSetup) {
     private val dynamic = context.config.produce == CompilerOutputKind.DYNAMIC ||
             context.config.produce == CompilerOutputKind.FRAMEWORK
 
-
     private val nomain = config.get(KonanConfigKeys.NOMAIN) ?: false
     private val libraries = context.llvm.librariesToLink
 
@@ -506,7 +506,6 @@ internal class LinkStage(setup: BackendSetup) {
         if (platform.useCompilerDriverAsLinker) {
             return args
         }
-
         val result = mutableListOf<String>()
         for (arg in args) {
             // If user passes compiler arguments to us - transform them to linker ones.

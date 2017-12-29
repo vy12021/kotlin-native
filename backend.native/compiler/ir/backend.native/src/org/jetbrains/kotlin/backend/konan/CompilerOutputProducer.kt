@@ -31,26 +31,29 @@ internal class BitcodeProducer(override val context: Context) : CompilerOutputPr
 internal class LibraryProducer(override val context: Context) : CompilerOutputProducer {
 
     private val phaser = PhaseManager(context)
-    lateinit var library: KonanLibraryWriter
+    lateinit var libraryWriter: KonanLibraryWriter
 
     override fun produce() {
         val llvmModule = context.llvmModule!!
         val config = context.config.configuration
         val libraryName = context.config.moduleId
 
-        val bitcode  = produceLibrary(context, config, llvmModule)
+        val bitcode = produceLibrary(context, config, llvmModule)
 
         phaser.phase(KonanPhase.OBJECT_FILES) {
             // stubs
             context.config.nativeLibraries.forEach {
-                val stubs = compileStaticLibrary(context, listOf(it), File(it).name + ".a")
-                library.addIncludedBinary(stubs)
+                addStaticLibrary(it)
             }
-            val staticLib = compileStaticLibrary(context, listOf(bitcode),libraryName + ".a")
-            library.addIncludedBinary(staticLib)
+            addStaticLibrary(bitcode)
         }
+        libraryWriter.commit()
+    }
 
-        library.commit()
+    private fun addStaticLibrary(bitcodeFileName: String) {
+        val stubs = File(File(bitcodeFileName).name + ".a")
+        File(compileStaticLibrary(context, listOf(bitcodeFileName))).copyTo(stubs)
+        libraryWriter.addIncludedBinary(stubs.name)
     }
 
     private fun produceLibrary(context: Context, config: CompilerConfiguration, llvmModule: LLVMModuleRef): String {
@@ -62,7 +65,7 @@ internal class LibraryProducer(override val context: Context) : CompilerOutputPr
         val nopack = config.getBoolean(KonanConfigKeys.NOPACK)
         val manifest = config.get(KonanConfigKeys.MANIFEST_FILE)
 
-        library = buildLibrary(
+        libraryWriter = buildLibrary(
                 context.config.nativeLibraries,
                 context.config.includeBinaries,
                 neededLibraries,
@@ -76,7 +79,7 @@ internal class LibraryProducer(override val context: Context) : CompilerOutputPr
                 manifest,
                 context.escapeAnalysisResult.getValueOrNull()?.build()?.toByteArray(),
                 context.dataFlowGraph)
-        return library.mainBitcodeFileName
+        return libraryWriter.mainBitcodeFileName
     }
 }
 
