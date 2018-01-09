@@ -102,3 +102,6 @@ val KotlinType.correspondingValueType: ValueType?
  */
 fun ValueType.shouldBeSignExtended(): Boolean =
         this == ValueType.SHORT || this == ValueType.BYTE
+
+fun ValueType.shouldBeZeroExtended(): Boolean =
+        this == ValueType.CHAR || this == ValueType.BOOLEAN

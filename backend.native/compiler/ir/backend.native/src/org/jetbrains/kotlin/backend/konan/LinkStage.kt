@@ -393,7 +393,12 @@ internal class CompilationStage(setup: BackendSetup):
     }
 
     fun produceStaticLibrary(bitcodeFiles: List<BitcodeFile>): StaticLibrary =
-            bitcodeFiles.map { llc(opt(it)) }.let { llvmAr(it) }
+            bitcodeFiles.map {
+                when (target) {
+                    KonanTarget.WASM32 -> bitcodeToWasm(bitcodeFiles)
+                    else -> llc(opt(it))
+                }
+            }.let { llvmAr(it) }
 
 //    private fun MutableList<String>.addNonEmpty(elements: List<String>) {
 //        addAll(elements.filter { !it.isEmpty() })

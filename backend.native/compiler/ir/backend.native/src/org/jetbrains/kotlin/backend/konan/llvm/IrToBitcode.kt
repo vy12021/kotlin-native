@@ -2357,12 +2357,19 @@ internal class CodeGeneratorVisitor(val context: Context, val lifetimes: Map<IrE
 
         // Adding signext to byte and short arguments at call site
         descriptor.allParameters.forEachIndexed { idx, param ->
-            if (param.type.correspondingValueType?.shouldBeSignExtended() == true
+            if (param.type.correspondingValueType?.shouldBeSignExtended() == true &&
                     // Avoid cases like `T : Byte`
-                    && args[idx].type != codegen.kObjHeaderPtr) {
+                    args[idx].type != codegen.kObjHeaderPtr) {
                 addCallSiteArgumentAttribute(callSite, function, idx, "signext")
             }
+            if (param.type.correspondingValueType?.shouldBeZeroExtended() == true &&
+                    args[idx].type != codegen.kObjHeaderPtr) {
+                addCallSiteArgumentAttribute(callSite, function, idx, "zeroext")
+            }
         }
+//        if (descriptor.returnType?.correspondingValueType?.shouldBeZeroExtended() == true) {
+//            addCallSizeReturnAttribute(callSite, function, "zeroext")
+//        }
         if (descriptor.returnType?.isNothing() == true) {
             functionGenerationContext.unreachable()
         }

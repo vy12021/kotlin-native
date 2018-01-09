@@ -405,8 +405,10 @@ private class DeclarationsGeneratorVisitor(override val context: Context) :
             if (param.type.correspondingValueType?.shouldBeSignExtended() == true) {
                 addFunctionArgumentAttribute(llvmFunction, idx, "signext")
             }
+            if (param.type.correspondingValueType?.shouldBeZeroExtended() == true) {
+                addFunctionArgumentAttribute(llvmFunction, idx, "zeroext")
+            }
         }
-
         if (!context.config.configuration.getBoolean(KonanConfigKeys.OPTIMIZATION)) {
             LLVMAddTargetDependentFunctionAttr(llvmFunction, "no-frame-pointer-elim", "true")
         }
