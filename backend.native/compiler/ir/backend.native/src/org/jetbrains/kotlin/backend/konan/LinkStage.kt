@@ -533,7 +533,7 @@ internal class LinkStage(setup: BackendSetup) {
     private val entryPointSelector: List<String>
         get() = if (nomain || dynamic) emptyList() else platform.entrySelector
 
-    private fun link(objectFiles: List<ObjectFile>, includedBinaries: List<String>, libraryProvidedLinkerFlags: List<String>): ExecutableFile? {
+    private fun link(objectFiles: List<ObjectFile>, defaultLibs: List<String>, userProvidedLibs: List<String>, libraryProvidedLinkerFlags: List<String>): ExecutableFile? {
         val frameworkLinkerArgs: List<String>
         val executable: String
 
@@ -563,7 +563,7 @@ internal class LinkStage(setup: BackendSetup) {
                 + frameworkLinkerArgs
                 + platform.linkCommandSuffix()
                 + libraryProvidedLinkerFlags
-                externalLibraries(includedBinaries)
+//                externalLibraries(includedBinaries)
             }.execute()
         } catch (e: KonanExternalToolFailure) {
             context.reportCompilationError("linker invocation reported errors")
@@ -578,10 +578,17 @@ internal class LinkStage(setup: BackendSetup) {
         val includedBinaries =
             libraries.map{ it.includedPaths }.flatten()
 
+        val (defalutLibs, userProvidedLibs) = libraries.partition { it.isDefaultLibrary }
+
         val libraryProvidedLinkerFlags =
             libraries.map{ it.linkerOpts }.flatten()
 
-        link(objectFiles, includedBinaries, libraryProvidedLinkerFlags)
+        link(
+                objectFiles,
+                defalutLibs.map { it.includedPaths }.flatten(),
+                userProvidedLibs.map { it.includedPaths }.flatten(),
+                libraryProvidedLinkerFlags
+        )
     }
 }
 
