@@ -147,7 +147,7 @@ internal open class MacOSBasedPlatform(distribution: Distribution)
             + osVersionMin
             + listOf("-syslibroot", targetSysRoot, "-o", executable)
             + objectFiles
-            + staticLibraries
+            + staticLibraries.map { listOf("-force_load", it) }.flatten()
             if (optimize) + linkerOptimizationFlags
             if (!debug) + linkerNoDebugFlags
             if (dynamic) + linkerDynamicFlags
@@ -192,7 +192,7 @@ internal open class LinuxBasedPlatform(val distribution: Distribution)
             + propertyTargetString("dynamicLinker")
             + "-o"
             + executable
-            + staticLibraries
+            + staticLibraries.map { listOf("--whole-archive", it) }.flatten()
             if (!dynamic) + "$targetSysRoot/usr/lib64/crt1.o"
             + "$targetSysRoot/usr/lib64/crti.o"
             if (dynamic)
@@ -576,7 +576,7 @@ internal class LinkStage(setup: BackendSetup) {
         context.log{"# Compiler root: ${context.config.distribution.konanHome}"}
 
         val includedBinaries =
-            libraries.map{ it.includedPaths}.flatten()
+            libraries.map{ it.includedPaths }.flatten()
 
         val libraryProvidedLinkerFlags =
             libraries.map{ it.linkerOpts }.flatten()
