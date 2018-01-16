@@ -31,7 +31,7 @@ import java.io.File
 open class KonanInteropLibrary(name: String,
                                project: ProjectInternal,
                                instantiator: Instantiator,
-                               targets: Iterable<String> = project.konanExtension.targets
+                               targets: Iterable<String> = project.platformManager.enabled.map {it.name}
 ) : KonanBuildingConfig<KonanInteropTask>(name, KonanInteropTask::class.java, project, instantiator, targets),
     KonanInteropSpec
 {

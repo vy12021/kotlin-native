@@ -78,14 +78,8 @@ class K2NativeCompilerArguments : CommonCompilerArguments() {
     @Argument(value = "-produce", shortName = "-p", valueDescription = "{program|dynamic|framework|library|bitcode}", description = "Specify output file kind")
     var produce: String? = null
 
-    @Argument(value = "-properties", valueDescription = "<path>", description = "Override standard 'konan.properties' location")
-    var propertyFile: String? = null
-
     @Argument(value = "-repo", shortName = "-r", valueDescription = "<path>", description = "Library search path")
     var repositories: Array<String>? = null
-
-    @Argument(value = "-runtime", valueDescription = "<path>", description = "Override standard 'runtime.bc' location")
-    var runtimeFile: String? = null
 
     @Argument(value = "-target", valueDescription = "<target>", description = "Set hardware target")
     var target: String? = null
@@ -121,9 +115,15 @@ class K2NativeCompilerArguments : CommonCompilerArguments() {
     @Argument(value = "--print_locations", description = "Print locations")
     var printLocations: Boolean = false
 
+    @Argument(value = "--config", valueDescription = "<path>", description = "Override standard config location")
+    var configDir: String? = null
+
     @Argument(value = "--purge_user_libs", description = "Don't link unused libraries even explicitly specified")
     var purgeUserLibs: Boolean = false
 
+    @Argument(value = "--runtime", valueDescription = "<path>", description = "Override standard 'runtime.bc' location")
+
+    var runtimeFile: String? = null
     @Argument(value = "--time", description = "Report execution time for compiler phases")
     var timePhases: Boolean = false
 

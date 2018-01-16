@@ -62,7 +62,7 @@ open class KonanInteropTask: KonanBuildingTask(), KonanInteropSpec {
     @InputFiles val linkFiles = mutableSetOf<FileCollection>()
 
     override fun buildArgs() = mutableListOf<String>().apply {
-        addArg("-properties", "${project.konanHome}/konan/konan.properties")
+        //addArg("-properties", "${project.konanHome}/konan/konan.properties")
 
         addArg("-o", artifact.canonicalPath)
 

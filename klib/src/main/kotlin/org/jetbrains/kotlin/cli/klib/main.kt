@@ -21,7 +21,7 @@ import kotlin.system.exitProcess
 import org.jetbrains.kotlin.backend.konan.library.impl.*
 import org.jetbrains.kotlin.backend.konan.library.KonanLibrarySearchPathResolver
 import org.jetbrains.kotlin.konan.file.File
-import org.jetbrains.kotlin.konan.target.TargetManager
+import org.jetbrains.kotlin.konan.target.*
 
 fun printUsage() {
     println("Usage: klib <command> <library> <options>")
@@ -167,7 +167,8 @@ fun libraryInRepoOrCurrentDir(repository: File, name: String): File {
 fun main(args: Array<String>) {
     val command = Command(args)
 
-    val targetManager = TargetManager(command.options["-target"]?.last())
+    val platformManager = PlatformManager(customerDistribution())
+    val targetManager = platformManager.targetManager(command.options["-target"]?.last())
     val target = targetManager.targetName
 
     val repository = command.options["-repository"]?.last()

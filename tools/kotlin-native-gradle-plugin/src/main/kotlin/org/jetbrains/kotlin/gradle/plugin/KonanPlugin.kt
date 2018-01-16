@@ -23,8 +23,8 @@ import org.gradle.api.plugins.BasePlugin
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 import org.jetbrains.kotlin.gradle.plugin.KonanPlugin.Companion.COMPILE_ALL_TASK_NAME
 import org.jetbrains.kotlin.gradle.plugin.tasks.*
-import org.jetbrains.kotlin.konan.target.KonanTarget
-import org.jetbrains.kotlin.konan.target.TargetManager
+import org.jetbrains.kotlin.konan.target.*
+import org.jetbrains.kotlin.konan.target.HostManager
 import org.jetbrains.kotlin.konan.util.visibleName
 import java.io.File
 import java.util.*
@@ -74,8 +74,18 @@ internal val Project.konanArtifactsContainer: NamedDomainObjectContainer<KonanBu
     get() = extensions.getByName(KonanPlugin.ARTIFACTS_CONTAINER_NAME)
             as NamedDomainObjectContainer<KonanBuildingConfig<*>>
 
+internal val Project.platformManager: PlatformManager
+    get() {
+        return findProperty("platformManager") as PlatformManager? ?: PlatformManager(customerDistribution(konanHome))
+    }
+
 internal val Project.konanTargets: List<KonanTarget>
-    get() = konanExtension.konanTargets
+    get() {
+        return platformManager.toKonanTargets(konanExtension.targets)
+                .filter{ platformManager.isEnabled(it) }
+                .distinct()
+
+    }
 
 @Suppress("UNCHECKED_CAST")
 internal val Project.konanExtension: KonanExtension
@@ -227,11 +237,7 @@ open class KonanExtension {
     var targets = mutableListOf("host")
     var languageVersion: String? = null
     var apiVersion: String? = null
-
     val jvmArgs = mutableListOf<String>()
-
-    internal val konanTargets: List<KonanTarget>
-        get() = targets.map { TargetManager(it).target }.distinct()
 }
 
 class KonanPlugin @Inject constructor(private val registry: ToolingModelBuilderRegistry)
@@ -242,7 +248,7 @@ class KonanPlugin @Inject constructor(private val registry: ToolingModelBuilderR
         KONAN_VERSION       ("konan.version"),
         KONAN_BUILD_TARGETS ("konan.build.targets"),
         KONAN_JVM_ARGS      ("konan.jvmArgs"),
-        DOWNLOAD_COMPILER   ("download.compiler")
+        DOWNLOAD_COMPILER   ("download.compiler"),
     }
 
     companion object {

@@ -249,8 +249,7 @@ private fun processCLib(args: Array<String>): Array<String>? {
 
     val tool = ToolConfig(
         arguments.target,
-        arguments.properties,
-        System.getProperty("konan.home"),
+        arguments.configDir,
         flavor
     )
     tool.downloadDependencies()

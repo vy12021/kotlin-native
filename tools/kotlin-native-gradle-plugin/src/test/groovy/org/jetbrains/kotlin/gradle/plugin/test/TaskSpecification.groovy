@@ -58,7 +58,7 @@ class TaskSpecification extends BaseKonanSpecification {
         "includeDirs"                  | ""
     }
 
-    @Requires({ TargetManager.host == KonanTarget.MACBOOK })
+    @Requires({ TargetManager.host instanceof KonanTarget.MACBOOK })
     def 'Plugin should create framework tasks only for Apple targets'() {
         when:
         def project = KonanProject.createEmpty(projectDirectory) { KonanProject it ->
