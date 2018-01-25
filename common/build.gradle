@@ -20,6 +20,7 @@ import org.jetbrains.kotlin.CompileCppToBitcode
 
 targetList.each { targetName ->
     task ("${targetName}Hash", type: CompileCppToBitcode) {
+        srcRoot 'src/hash'
         name 'hash'
         target targetName
     }

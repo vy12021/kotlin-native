@@ -17,8 +17,8 @@
 package org.jetbrains.kotlin
 
 import org.gradle.api.DefaultTask
+import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.*
-import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
@@ -27,27 +27,43 @@ import org.jetbrains.kotlin.konan.target.KonanTarget
 class CompileCppToBitcode extends DefaultTask {
     private String name = "main"
     private String target = "host"
-    private File srcRoot;
+    private FileCollection srcFiles = project.files()
+    private List<File> includePaths = []
 
     protected List<String> compilerArgs = []
     protected List<String> linkerArgs = []
 
-    @InputDirectory
-    File getSrcRoot() {
-        return srcRoot ?: project.file("src/$name")
+    protected FileCollection directoryToCppFiles(Object directory) {
+        return project.fileTree(directory) {
+            include('**/*.cpp')
+            include('**/*.mm') // Objective-C++
+        }
+    }
+
+    protected FileCollection directoryToHeaderFiles(Object directory) {
+        return project.fileTree(directory) {
+            include('**/*.h')
+            include('**/*.hpp')
+        }
+    }
+
+    List<File> getIncludePaths() {
+        return includePaths
+    }
+
+    @InputFiles
+    FileCollection getSrcFiles() {
+        return srcFiles
+    }
+
+    @InputFiles
+    Collection<FileCollection> getHeaderFiles() {
+        return includePaths.collect { directoryToHeaderFiles(it) }
     }
 
     @OutputFile
     File getOutFile() {
         return new File(getTargetDir(), "${name}.bc")
-    }
-
-    private File getSrcDir() {
-        return new File(this.getSrcRoot(), "cpp")
-    }
-
-    private File getHeadersDir() {
-        return new File(this.getSrcRoot(), "headers")
     }
 
     private File getTargetDir() {
@@ -66,8 +82,22 @@ class CompileCppToBitcode extends DefaultTask {
         target = value
     }
 
-    void srcRoot(File value) {
-        srcRoot = value
+    void srcRoot(Object value) {
+        def root = project.file(value)
+        srcDir(new File(root, "cpp"))
+        includeDir(new File(root, "headers"))
+    }
+
+    void srcFile(Object file) {
+        srcFiles += project.files(file)
+    }
+
+    void srcDir(Object directory) {
+        srcFiles += directoryToCppFiles(directory)
+    }
+
+    void includeDir(Object directory) {
+        includePaths.add(project.file(directory))
     }
 
     protected List<String> getCompilerArgs() {
@@ -101,8 +131,9 @@ class CompileCppToBitcode extends DefaultTask {
     @TaskAction
     void compile() {
         // the strange code below seems to be required due to some Gradle (Groovy?) behaviour
-        File headersDir = this.getHeadersDir()
-        File srcDir = this.getSrcDir()
+        FileCollection srcFiles = this.getSrcFiles()
+        File[] includePaths = this.getIncludePaths()
+
         List<String> compilerArgs = this.getCompilerArgs()
         List<String> linkerArgs = this.getLinkerArgs()
         File objDir = this.getObjDir()
@@ -115,13 +146,12 @@ class CompileCppToBitcode extends DefaultTask {
             args '-O2'
             args compilerArgs
 
-            args "-I$headersDir"
+            includePaths.each {
+                args "-I$it"
+            }
 
             args '-c', '-emit-llvm'
-            args project.fileTree(srcDir) {
-                include('**/*.cpp')
-                include('**/*.mm') // Objective-C++
-            }
+            args srcFiles
         }
 
         project.exec {
