@@ -1,39 +1,46 @@
-import org.jetbrains.kotlin.KlibInstall
-
-apply plugin: 'konan'
-
 buildscript {
-    repositories {
-        mavenCentral()
-        maven {
-            url kotlinCompilerRepo
-        }
-    }
-
-
-    dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-native-gradle-plugin"
-    }
-
-    ext.konanHome = distDir.absolutePath
-    ext.jvmArgs = project.findProperty("platformLibsJvmArgs") ?: "-Xmx3G"
-    ext.setProperty("konan.home", konanHome)
-    ext.setProperty("konan.jvmArgs", jvmArgs)
+    apply from: "$rootDir/gradle/kotlinGradlePlugin.gradle"
 }
 
-konan.targets = [ 'wasm32' ]
+apply plugin: 'kotlin'
 
-konanArtifacts {
-    library("jsinterop") {
-        dependsOn ':wasm32CrossDist' // our plugin runs konanc, so make sure it is already there.
-        extraOpts '-includeBinary', project.file('src/main/js/jsinterop.js')
+configurations {
+    runtime
+}
+
+dependencies {
+    runtime project(':Interop:StubGenerator')
+}
+
+def packages = [
+    [name: 'math', pkg: 'kotlinx.interop.wasm.math'],
+    [name: 'dom',  pkg: 'kotlinx.interop.wasm.dom' ]
+]
+
+// Just an umbrella for all the generating tasks
+task generateWasmStubs
+
+packages.each {
+    def name = it.name
+    def pkg = it.pkg
+
+    task "generate${name}Stubs"(type: JavaExec) {
+        dependsOn ':Interop:StubGenerator:classes'
+        def kotlinStubsDir = file("$buildDir/wasm-stubs/$name/kotlin")
+        def jsStubsDir = file("$buildDir/wasm-stubs/$name/js")
+
+        main = 'org.jetbrains.kotlin.native.interop.gen.wasm.MainKt'
+        classpath = configurations.runtime
+        jvmArgs = ["-Dfile.encoding=UTF-8"] // TODO: Do we need other params?
+        args = ['-pkg', pkg,
+                '-target', 'wasm32',
+                "-generated", kotlinStubsDir,
+                "-natives", jsStubsDir,
+                "-jsstubsname", name]
+
+        outputs.dir(kotlinStubsDir)
+        outputs.dir(jsStubsDir)
     }
-}
 
-task installJsRuntime(type: KlibInstall) {
-    dependsOn konanArtifacts.jsinterop.wasm32
-    klib = konanArtifacts.jsinterop.wasm32.artifact
-    repo = file("$konanHome/klib/platform/wasm32")
-    it.target = 'wasm32'
+    generateWasmStubs.dependsOn "generate${name}Stubs"
 }
-

@@ -41,6 +41,11 @@ open class CommonInteropArguments : CommonToolArguments() {
     var libraryPath: Array<String> = arrayOf()
 }
 
+class JSInteropArguments : CommonInteropArguments() {
+    @Argument(value = "-jsstubsname", valueDescription = "<name>", description = "provide a name for the generated js stubs file")
+    var jsstubsname: String? = null
+}
+
 class CInteropArguments : CommonInteropArguments() {
     @Argument(value = "-import", valueDescription = "<imports>", description = "a semicolon separated list of headers, prepended with the package name") 
     var import: Array<String> = arrayOf()
@@ -71,9 +76,9 @@ class CInteropArguments : CommonInteropArguments() {
     @Argument(value = "-shims", description = "wrap bindings by a tracing layer") 
     var shims: Boolean = false
 
-    @Argument(value = "-linker", valueDescription = "<file>", description = "use specified linker") 
-
+    @Argument(value = "-linker", valueDescription = "<file>", description = "use specified linker")
     var linker: String? = null
+
     @Argument(value = "-cstubsname", valueDescription = "<name>", description = "provide a name for the generated c stubs file") 
     var cstubsname: String? = null
 

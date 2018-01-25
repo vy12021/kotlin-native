@@ -3,7 +3,7 @@ package org.jetbrains.kotlin.native.interop.gen.wasm
 import org.jetbrains.kotlin.konan.file.File
 import org.jetbrains.kotlin.native.interop.gen.argsToCompiler
 import org.jetbrains.kotlin.native.interop.gen.wasm.idl.*
-import org.jetbrains.kotlin.native.interop.tool.CommonInteropArguments
+import org.jetbrains.kotlin.native.interop.tool.JSInteropArguments
 import org.jetbrains.kotlin.native.interop.tool.parseCommandLine
 
 fun kotlinHeader(packageName: String): String {
@@ -392,7 +392,7 @@ const val idlMathPackage = "kotlinx.interop.wasm.math"
 const val idlDomPackage = "kotlinx.interop.wasm.dom"
 
 fun processIdlLib(args: Array<String>): Array<String> {
-    val arguments = parseCommandLine(args, CommonInteropArguments())
+    val arguments = parseCommandLine(args, JSInteropArguments())
     // TODO: Refactor me.
     val userDir = System.getProperty("user.dir")
     val ktGenRoot = File(arguments.generated ?: userDir).mkdirs()
@@ -404,8 +404,10 @@ fun processIdlLib(args: Array<String>): Array<String> {
         else -> throw IllegalArgumentException("Please choose either $idlMathPackage or $idlDomPackage for -pkg argument")
     }
 
+    val jsFileName = arguments.jsstubsname?.let { "${it}_stubs.js" } ?: "js_stubs.js"
+
     File(ktGenRoot, "kotlin_stubs.kt").writeText(generateKotlin(arguments.pkg!!, idl))
-    File(nativeLibsDir, "js_stubs.js").writeText(generateJs(idl))
-    File(arguments.manifest!!).writeText("") // The manifest is currently unused for wasm.
+    File(nativeLibsDir, jsFileName).writeText(generateJs(idl))
+    arguments.manifest?.let {  File(it).writeText("") }  // The manifest is currently unused for wasm.
     return argsToCompiler(arguments.staticLibrary, arguments.libraryPath)
 }

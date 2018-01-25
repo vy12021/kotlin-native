@@ -194,6 +194,19 @@ targetList.each { target ->
                 project(':Interop:Runtime').file('src/main/kotlin'),
                 project(':Interop:Runtime').file('src/native/kotlin'),
                 project(':runtime').file('src/main/kotlin')]
+
+        if (target == "wasm32") {
+            def jsRuntime = project(':Interop:JsRuntime')
+            args += [jsRuntime.file('src/main/kotlin'),
+                     jsRuntime.file('build/wasm-stubs/dom/kotlin'),
+                     jsRuntime.file('build/wasm-stubs/math/kotlin'),
+                     '-includeBinary', jsRuntime.file('src/main/js/jsinterop.js'),
+                     '-includeBinary', jsRuntime.file('build/wasm-stubs/dom/js/dom_stubs.js'),
+                     '-includeBinary', jsRuntime.file('build/wasm-stubs/math/js/math_stubs.js')]
+
+            dependsOn ':Interop:JsRuntime:generateWasmStubs'
+        }
+
         inputs.dir(project(':runtime').file('src/main/kotlin'))
         inputs.dir(project(':Interop:Runtime').file('src/main/kotlin'))
         inputs.dir(project(':Interop:Runtime').file('src/native/kotlin'))
