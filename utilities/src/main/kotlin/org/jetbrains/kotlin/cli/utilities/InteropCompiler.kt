@@ -19,6 +19,7 @@ package org.jetbrains.kotlin.cli.utilities
 import org.jetbrains.kotlin.backend.konan.library.defaultResolver
 import org.jetbrains.kotlin.backend.konan.library.impl.KonanLibrary
 import org.jetbrains.kotlin.backend.konan.library.resolveLibrariesRecursive
+import org.jetbrains.kotlin.konan.TempFiles
 import org.jetbrains.kotlin.konan.file.File
 import org.jetbrains.kotlin.konan.properties.loadProperties
 import org.jetbrains.kotlin.konan.target.TargetManager
@@ -34,17 +35,18 @@ private val PURGE_USER_LIBS = "--purge_user_libs"
 fun invokeInterop(flavor: String, args: Array<String>): Array<String> {
     val cinteropArgFilter = listOf(NODEFAULTLIBS, PURGE_USER_LIBS)
 
-    var outputFileName = "nativelib"
+    var outputPath = "nativelib"
     var target = "host"
     val libraries = mutableListOf<String>()
     val repos = mutableListOf<String>()
     var noDefaultLibs = false
     var purgeUserLibs = false
+    var temporaryFilesDir = ""
     for (i in args.indices) {
         val arg = args[i]
         val nextArg = args.getOrNull(i + 1)
         if (arg.startsWith("-o"))
-            outputFileName = nextArg ?: outputFileName
+            outputPath = nextArg ?: outputPath
         if (arg == "-target")
             target = nextArg ?: target
         if (arg == "-library")
@@ -55,10 +57,11 @@ fun invokeInterop(flavor: String, args: Array<String>): Array<String> {
             noDefaultLibs = true
         if (arg == PURGE_USER_LIBS)
             purgeUserLibs = true
+        if (arg == "--temporary_files_dir")
+            temporaryFilesDir = nextArg ?: ""
     }
 
-
-    val buildDir = File("$outputFileName-build")
+    val buildDir = File("$outputPath-build")
     val generatedDir = File(buildDir, "kotlin")
     val nativesDir = File(buildDir, "natives")
     val cstubsName ="cstubs"
@@ -82,17 +85,18 @@ fun invokeInterop(flavor: String, args: Array<String>): Array<String> {
         } ?: emptyList()
     }
 
-    val additionalArgs = listOf<String>(
+    val additionalArgs = listOf(
         "-generated", generatedDir.path, 
         "-natives", nativesDir.path, 
         "-cstubsname", cstubsName,
         "-manifest", manifest.path,
-        "-flavor", flavor
+        "-flavor", flavor,
+        "-temporaryFilesDir", temporaryFilesDir
     ) + importArgs
 
     val cinteropArgs = (additionalArgs + args.filter { it !in cinteropArgFilter }).toTypedArray()
 
-    val cinteropArgsToCompiler = interop(flavor, cinteropArgs) ?: emptyArray<String>()
+    val cinteropArgsToCompiler = interop(flavor, cinteropArgs) ?: emptyArray()
 
     val nativeStubs = 
         if (flavor == "wasm") 
@@ -103,9 +107,10 @@ fun invokeInterop(flavor: String, args: Array<String>): Array<String> {
     val konancArgs = arrayOf(
         generatedDir.path, 
         "-produce", "library", 
-        "-o", outputFileName,
+        "-o", outputPath,
         "-target", target,
-        "-manifest", manifest.path) + 
+        "-manifest", manifest.path,
+        "--temporary_files_dir", temporaryFilesDir) +
         nativeStubs +
         cinteropArgsToCompiler + 
         libraries.flatMap { listOf("-library", it) } + 

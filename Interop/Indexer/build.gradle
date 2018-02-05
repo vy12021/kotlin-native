@@ -128,7 +128,6 @@ kotlinNativeInterop {
         defFile 'clang.def'
         compilerOpts cflags
         linkerOpts ldflags
-        genTask.args '-keepcstubs', 'true'
         genTask.dependsOn libclangextTask
         genTask.inputs.dir libclangextDir
     }

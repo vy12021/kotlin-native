@@ -29,6 +29,7 @@ import org.jetbrains.kotlin.config.CommonConfigurationKeys
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.descriptors.impl.ModuleDescriptorImpl
 import org.jetbrains.kotlin.descriptors.ModuleDescriptor
+import org.jetbrains.kotlin.konan.TempFiles
 import org.jetbrains.kotlin.konan.file.File
 import org.jetbrains.kotlin.konan.target.*
 import org.jetbrains.kotlin.konan.util.*
@@ -72,7 +73,7 @@ class KonanConfig(val project: Project, val configuration: CompilerConfiguration
         .prefixBaseNameIfNot(prefix)
         .suffixIfNot(suffix)
 
-    val tempFiles = TempFiles(outputName)
+    val tempFiles = TempFiles(outputName, configuration.get(KonanConfigKeys.TEMPORARY_FILES_DIR))
 
     val moduleId: String
         get() = configuration.get(KonanConfigKeys.MODULE_NAME) ?: File(outputName).name

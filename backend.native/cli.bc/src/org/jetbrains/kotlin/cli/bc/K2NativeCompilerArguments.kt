@@ -124,6 +124,9 @@ class K2NativeCompilerArguments : CommonCompilerArguments() {
     @Argument(value = "--purge_user_libs", description = "Don't link unused libraries even explicitly specified")
     var purgeUserLibs: Boolean = false
 
+    @Argument(value = "--temporary_files_dir", valueDescription = "<path>", description = "Save temporary files to the given directory")
+    var temporaryFilesDir: String? = null
+
     @Argument(value = "--time", description = "Report execution time for compiler phases")
     var timePhases: Boolean = false
 

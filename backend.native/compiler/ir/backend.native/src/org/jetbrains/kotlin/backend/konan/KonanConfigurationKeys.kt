@@ -91,6 +91,8 @@ class KonanConfigKeys {
                 = CompilerConfigurationKey.create("library search path repositories")
         val RUNTIME_FILE: CompilerConfigurationKey<String?> 
                 = CompilerConfigurationKey.create("override default runtime file path")
+        val TEMPORARY_FILES_DIR: CompilerConfigurationKey<String?>
+                = CompilerConfigurationKey.create("directory for temporary files")
         val SOURCE_MAP: CompilerConfigurationKey<List<String>> 
                 = CompilerConfigurationKey.create("generate source map")
         val TARGET: CompilerConfigurationKey<String?>
