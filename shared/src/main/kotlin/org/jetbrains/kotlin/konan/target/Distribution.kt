@@ -42,8 +42,13 @@ class Distribution(
     fun preconfiguredPropertyFiles(genericName: String): List<File> =
             File(this.configDir, "platforms/$genericName").listFiles
 
-    fun userPropertyFiles(genericName: String): List<File> =
-            localKonanDir?.let { File(it, "platforms/$genericName").listFiles } ?: emptyList()
+    fun userPropertyFiles(genericName: String): List<File> {
+        val directory = File(localKonanDir, "platforms/$genericName")
+        return if (directory.exists && directory.isDirectory)
+            directory.listFiles
+        else
+            emptyList()
+    }
 
     fun additionalPropertyFiles(genericName: String) =
             preconfiguredPropertyFiles(genericName) + userPropertyFiles(genericName)
@@ -52,7 +57,6 @@ class Distribution(
         val loaded = File(mainPropertyFileName).loadProperties()
         HostManager.knownTargetTemplates.forEach {
             additionalPropertyFiles(it).forEach {
-                println("### loading ${it.absolutePath}")
                 val additional = it.loadProperties()
                 loaded.putAll(additional)
             }
