@@ -27,17 +27,14 @@ llvmLtoDynamicFlags.zephyr_stm32f4_disco = -relocation-model=pic
 
 boardSpecificClangFlags.zephyr_stm32f4_disco = -mabi=aapcs -mthumb -mcpu=cortex-m4
 
-
-
-targetToolchain.linux-zephyr_stm32f4_disco = gcc-arm-none-eabi-7-2017-q4-major-linux/../gcc-arm-none-eabi-7-2017-q4-major/arm-none-eabi
+targetToolchain.linux-zephyr_stm32f4_disco = gcc-arm-none-eabi-7-2017-q4-major-linux/arm-none-eabi
 dependencies.linux-zephyr_stm32f4_disco = \
     clang-llvm-5.0.0-linux-x86-64 \
     gcc-arm-none-eabi-7-2017-q4-major-linux \
     target-sysroot-2-wasm
 
-targetToolchain.osx-zephyr_stm32f4_disco = gcc-arm-none-eabi-7-2017-q4-major-mac/../gcc-arm-none-eabi-7-2017-q4-major/arm-none-eabi
+targetToolchain.osx-zephyr_stm32f4_disco = gcc-arm-none-eabi-7-2017-q4-major-mac/arm-none-eabi
 dependencies.osx-zephyr_stm32f4_disco = \
     gcc-arm-none-eabi-7-2017-q4-major-mac \
     clang-llvm-5.0.0-darwin-macos \
     target-sysroot-2-wasm
-
