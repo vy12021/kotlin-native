@@ -1,7 +1,7 @@
 package org.jetbrains.kotlin.gradle.plugin.test
 
 import org.gradle.testkit.runner.TaskOutcome
-import org.jetbrains.kotlin.konan.target.TargetManager
+import org.jetbrains.kotlin.konan.target.PlatformManager
 
 class PathSpecification extends BaseKonanSpecification {
 
@@ -9,11 +9,13 @@ class PathSpecification extends BaseKonanSpecification {
         project.konanBuildDir.toPath().resolve(path).toFile().exists()
     }
 
+    def platformManager = PlatformManager()
+
     def 'Plugin should provide a correct path to the artifacts created'() {
         expect:
         def project = KonanProject.createEmpty(
                 projectDirectory,
-                new TargetManager.enabled.collect { t -> t.visibleName }
+                platformManager.enabled.collect { t -> t.visibleName }
         ) { KonanProject it ->
             it.generateSrcFile("main.kt")
             it.generateDefFile("interop.def", "")

@@ -16,10 +16,9 @@
 
 package org.jetbrains.kotlin.konan.target
 
-import org.jetbrains.kotlin.konan.file.*
-import org.jetbrains.kotlin.konan.properties.*
-import org.jetbrains.kotlin.konan.target.*
-import org.jetbrains.kotlin.konan.util.visibleName
+import org.jetbrains.kotlin.konan.file.File
+import org.jetbrains.kotlin.konan.properties.keepOnlyDefaultProfiles
+import org.jetbrains.kotlin.konan.properties.loadProperties
 import org.jetbrains.kotlin.konan.util.DependencyProcessor
 
 class Distribution(
@@ -83,20 +82,6 @@ class Distribution(
 
     fun availableSubTarget(genericName: String) =
             additionalPropertyFiles(genericName).map { it.name }
-}
-
-fun Properties.keepOnlyDefaultProfiles() {
-    val DEPENDENCY_PROFILES_KEY = "dependencyProfiles"
-    val dependencyProfiles = this.getProperty(DEPENDENCY_PROFILES_KEY)
-    if (dependencyProfiles != "default alt")
-        error("unexpected $DEPENDENCY_PROFILES_KEY value: expected 'default alt', got '$dependencyProfiles'")
-
-    // Force build to use only 'default' profile:
-    this.setProperty(DEPENDENCY_PROFILES_KEY, "default")
-    // Force build to use fixed Xcode version:
-    this.setProperty("useFixedXcodeVersion", "9.2")
-    // TODO: it actually affects only resolution made in :dependencies,
-    // that's why we assume that 'default' profile comes first (and check this above).
 }
 
 fun buildDistribution(konanHomeOverride: String? = null) = Distribution(true, konanHomeOverride, null)

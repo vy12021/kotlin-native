@@ -197,7 +197,6 @@ class TgzNativeDep extends NativeDep {
 
 class HelperNativeDep extends TgzNativeDep {
 
-    //Properties konanProperties = new Properties()
     KonanPropertiesLoader konanPropertiesLoader = null
 
     @TaskAction

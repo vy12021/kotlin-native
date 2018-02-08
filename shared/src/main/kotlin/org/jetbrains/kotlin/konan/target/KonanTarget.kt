@@ -16,9 +16,8 @@
 
 package org.jetbrains.kotlin.konan.target
 
-import org.jetbrains.kotlin.konan.util.visibleName
-import org.jetbrains.kotlin.konan.util.Named
 import org.jetbrains.kotlin.konan.target.KonanTarget.*
+import org.jetbrains.kotlin.konan.util.Named
 
 enum class Family(val exeSuffix:String, val dynamicPrefix: String, val dynamicSuffix: String) {
     OSX     ("kexe", "lib", "dylib"),
