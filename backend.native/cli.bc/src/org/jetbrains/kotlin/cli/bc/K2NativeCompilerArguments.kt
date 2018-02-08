@@ -115,9 +115,6 @@ class K2NativeCompilerArguments : CommonCompilerArguments() {
     @Argument(value = "--print_locations", description = "Print locations")
     var printLocations: Boolean = false
 
-    @Argument(value = "--config", valueDescription = "<path>", description = "Override standard config location")
-    var configDir: String? = null
-
     @Argument(value = "--purge_user_libs", description = "Don't link unused libraries even explicitly specified")
     var purgeUserLibs: Boolean = false
 

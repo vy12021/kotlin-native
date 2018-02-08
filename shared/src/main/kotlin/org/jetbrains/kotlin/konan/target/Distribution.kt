@@ -24,31 +24,36 @@ import org.jetbrains.kotlin.konan.util.DependencyProcessor
 
 class Distribution(
         private val onlyDefaultProfiles: Boolean = false,
-        private val configDirOverride: String? = null,
+        private val konanHomeOverride: String? = null,
         private val runtimeFileOverride: String? = null) {
 
-    val localKonanDir =File(File.userHome, ".konan")
+    val localKonanDir = "${File.userHome}/.konan"
 
     private fun findKonanHome(): String {
+        if (konanHomeOverride != null) return konanHomeOverride
+
         val value = System.getProperty("konan.home", "dist")
         val path = File(value).absolutePath
         return path
     }
 
     val konanHome = findKonanHome()
-    val configDir = configDirOverride ?: "$konanHome/konan"
-    val mainPropertyFileName = "$configDir/konan.properties"
+    val konanSubdir = "$konanHome/konan"
+    val mainPropertyFileName = "$konanSubdir/konan.properties"
 
-    fun preconfiguredPropertyFiles(genericName: String): List<File> =
-            File(this.configDir, "platforms/$genericName").listFiles
-
-    fun userPropertyFiles(genericName: String): List<File> {
-        val directory = File(localKonanDir, "platforms/$genericName")
+    private fun propertyFilesFromConfigDir(configDir: String, genericName: String): List<File> {
+        val directory = File(configDir, "platforms/$genericName")
         return if (directory.exists && directory.isDirectory)
             directory.listFiles
         else
             emptyList()
     }
+
+    private fun preconfiguredPropertyFiles(genericName: String) =
+        propertyFilesFromConfigDir(konanSubdir, genericName)
+
+    private fun userPropertyFiles(genericName: String) =
+        propertyFilesFromConfigDir(localKonanDir, genericName)
 
     fun additionalPropertyFiles(genericName: String) =
             preconfiguredPropertyFiles(genericName) + userPropertyFiles(genericName)
@@ -69,12 +74,6 @@ class Distribution(
 
     val klib = "$konanHome/klib"
     val stdlib = "$klib/common/stdlib"
-
-    val additionalPlatformDefinitions by lazy {
-        val userPlatforms = localKonanDir?.let { File(it, "config/platforms").listFiles }
-        val localPlatforms = File(configDir, "platforms").listFiles
-        localPlatforms + userPlatforms.orEmpty()
-    }
 
     fun defaultNatives(target: KonanTarget) = "$konanHome/konan/targets/${target.visibleName}/native"
 
@@ -100,7 +99,8 @@ fun Properties.keepOnlyDefaultProfiles() {
     // that's why we assume that 'default' profile comes first (and check this above).
 }
 
-fun buildDistribution(localConfigDir: String) = Distribution(true, localConfigDir, null)
+fun buildDistribution(konanHomeOverride: String? = null) = Distribution(true, konanHomeOverride, null)
 
-fun customerDistribution(konanHome: String? = null) = konanHome?.let { Distribution(false, "$it/konan", null) }
-        ?: Distribution()
+fun customerDistribution(konanHomeOverride: String? = null) = Distribution(false, konanHomeOverride)
+
+//fun bootstrapDistribution(runtimeFileOverride: String) = Distribution()

@@ -83,8 +83,6 @@ class KonanConfigKeys {
                 = CompilerConfigurationKey.create("print locations")
         val PRODUCE: CompilerConfigurationKey<CompilerOutputKind>
                 = CompilerConfigurationKey.create("compiler output kind")
-        val CONFIG_DIR: CompilerConfigurationKey<String?> 
-                = CompilerConfigurationKey.create("override default configuration location")
         val PURGE_USER_LIBS: CompilerConfigurationKey<Boolean>
                 = CompilerConfigurationKey.create("purge user-specified libs too")
         val REPOSITORIES: CompilerConfigurationKey<List<String>>

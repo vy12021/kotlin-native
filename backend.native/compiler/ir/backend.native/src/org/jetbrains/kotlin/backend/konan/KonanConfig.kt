@@ -41,7 +41,7 @@ class KonanConfig(val project: Project, val configuration: CompilerConfiguration
 
     internal val distribution = Distribution(
         false,
-        configuration.get(KonanConfigKeys.CONFIG_DIR),
+        null,
         configuration.get(KonanConfigKeys.RUNTIME_FILE))
 
     internal val platformManager = PlatformManager(distribution)

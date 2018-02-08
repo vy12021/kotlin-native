@@ -281,16 +281,15 @@ fun handleExceptionContinuation(x: (Throwable) -> Unit): Continuation<Any?> = ob
     List<String> executionCommandLine(String exe) {
 
         def absoluteTargetToolchain = platformManager.platform(target).absoluteTargetToolchain
+        def absoluteTargetSysRoot = platformManager.platform(target).absoluteTargetSysRoot
         if (target instanceof KonanTarget.WASM32) {
             def d8 = "$absoluteTargetToolchain/bin/d8"
             def launcherJs = "${exe}.js"
             return [d8, '--expose-wasm', launcherJs, '--', exe]
         } else if (target instanceof KonanTarget.LINUX_MIPS32 || target instanceof KonanTarget.LINUX_MIPSEL32) {
-            def targetSysroot = TargetPropertiesKt.targetString(properties, "targetSysRoot", target)
-            def absoluteTargetSysroot = "$dependenciesDir/$targetSysroot"
             def qemu = target instanceof KonanTarget.LINUX_MIPS32 ? "qemu-mips" : "qemu-mipsel"
             def absoluteQemu = "$absoluteTargetToolchain/bin/$qemu"
-            return [absoluteQemu, "-L", absoluteTargetSysroot, exe]
+            return [absoluteQemu, "-L", absoluteTargetSysRoot, exe]
         } else {
             return [exe]
         }

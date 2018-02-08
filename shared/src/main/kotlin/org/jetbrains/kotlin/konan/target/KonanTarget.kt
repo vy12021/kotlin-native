@@ -162,7 +162,8 @@ open class HostManager internal constructor(protected val distribution: Distribu
                     KonanTarget.WASM32
                 ) + zephyrSubtargets
                 KonanTarget.MINGW -> listOf(
-                    KonanTarget.MINGW
+                    KonanTarget.MINGW,
+                    KonanTarget.WASM32
                 ) 
                 KonanTarget.MACBOOK -> listOf(
                     KonanTarget.MACBOOK,

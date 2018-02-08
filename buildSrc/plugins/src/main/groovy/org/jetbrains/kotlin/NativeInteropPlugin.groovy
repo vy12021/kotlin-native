@@ -199,7 +199,8 @@ class NamedNativeInteropConfig implements Named {
                     new File(project.findProject(":Interop:Indexer").buildDir, "nativelibs"),
                     new File(project.findProject(":Interop:Runtime").buildDir, "nativelibs")
             ).asPath
-            systemProperties "konan.home": project.rootProject.file("dist")
+            //systemProperties "konan.home": project.rootProject.file("dist")
+            systemProperties "konan.home": project.rootProject.projectDir
             environment "LIBCLANG_DISABLE_CRASH_RECOVERY": "1"
 
             outputs.dir generatedSrcDir
@@ -215,7 +216,6 @@ class NamedNativeInteropConfig implements Named {
 
                 linkerOpts += linkFiles.files
 
-                args '--config', project.rootProject.file("config")
                 args '-generated', generatedSrcDir
                 args '-natives', nativeLibsDir
                 args '-flavor', this.flavor

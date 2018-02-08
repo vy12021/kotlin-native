@@ -172,7 +172,7 @@ task start(dependsOn: "${hostName}Start")
 
 targetList.each { target ->
     def konanJvmArgs = ["-ea",
-    "-Dkonan.home=$distDir",
+    "-Dkonan.home=${rootProject.projectDir}",
     "-Djava.library.path=${project.buildDir}/nativelibs/$hostName",
     "-Dfile.encoding=UTF-8"]
 
@@ -181,7 +181,6 @@ targetList.each { target ->
     def konanArgs = [*defaultArgs,
                      '-target', target,
                      '--runtime', project(':runtime').file("build/${target}/runtime.bc"),
-                     '--config', rootProject.localConfigDir.canonicalPath,
                      *project.globalBuildArgs]
 
     task("${target}Stdlib", type: JavaExec) {

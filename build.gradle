@@ -23,10 +23,10 @@ defaultTasks 'clean', 'dist'
 convention.plugins.platformInfo = new PlatformInfo()
 
 ext {
-    localConfigDir = project.file('config')
     distDir = file('dist')
     dependenciesDir = DependencyProcessor.defaultDependenciesRoot
-    platformManager = new PlatformManager(DistributionKt.buildDistribution(localConfigDir.absolutePath))
+    platformManager = new PlatformManager(DistributionKt.buildDistribution(projectDir.absolutePath))
+
     kotlinCompilerModule="org.jetbrains.kotlin:kotlin-compiler:${kotlinCompilerVersion}"
     kotlinStdLibModule="org.jetbrains.kotlin:kotlin-stdlib:${kotlinStdLibVersion}"
     kotlinReflectModule="org.jetbrains.kotlin:kotlin-reflect:${kotlinReflectVersion}"
@@ -230,7 +230,7 @@ task distCompiler(type: Copy) {
             exclude('**/*.bat')
         }
     }
-    from(project.file('config')) {
+    from(project.file('konan')) {
         into('konan')
     }
 }
