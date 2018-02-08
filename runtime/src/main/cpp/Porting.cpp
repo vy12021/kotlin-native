@@ -185,13 +185,8 @@ int snprintf(char* buffer, size_t size, const char* format, ...) {
   return rv;
 }
 
-
 size_t strnlen(const char* buffer, size_t maxSize) {
-//#if KONAN_ZEPHYR
-//  return strnlen(buffer, maxSize);
-//#else
   return ::strnlen(buffer, maxSize);
-//#endif
 }
 
 // Memory operations.
@@ -226,7 +221,8 @@ void free(void* pointer) {
 
 #ifdef KONAN_ZEPHYR
 void Konan_date_now(uint64_t* arg) {
-    //return 0;
+    // TODO: so how will we support time for embedded?
+    *arg = 0LL;
 }
 #else
 extern "C" void Konan_date_now(uint64_t*);
@@ -435,9 +431,8 @@ extern "C" {
 
 #if KONAN_ZEPHYR
     RUNTIME_USED void Konan_abort(const char*) {
-        // Do nothing.
+        // TODO: so how do we support abort for embedded? Do nothing for now.
     }
-
     /* Support the alias for the __aeabi_memset which may
        assume memory alignment.  */
     RUNTIME_USED void __aeabi_memset4 (void *dest, size_t n, int c)
