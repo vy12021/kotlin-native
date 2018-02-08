@@ -192,26 +192,17 @@ size_t strnlen(const char* buffer, size_t maxSize) {
 // Memory operations.
 #if KONAN_INTERNAL_DLMALLOC
 extern "C" void* dlcalloc(size_t, size_t);
-extern "C" void* dlrealloc(void*, size_t);
 extern "C" void dlfree(void*);
 #define calloc_impl dlcalloc
-#define realloc_impl dlrealloc
 #define free_impl dlfree
 #else
 #define calloc_impl ::calloc
-//#define realloc_impl ::realloc
 #define free_impl ::free
 #endif
 
 void* calloc(size_t count, size_t size) {
   return calloc_impl(count, size);
 }
-
-#if KONAN_INTERNAL_DLMALLOC
-void* realloc(void* ptr, size_t size) {
-  return realloc_impl(ptr, size);
-}
-#endif
 
 void free(void* pointer) {
   free_impl(pointer);
@@ -324,7 +315,7 @@ long getpagesize() {
 
 extern "C" {
 // TODO: get rid of these.
-#if KONAN_WASM || KONAN_ZEPHYR
+#if (KONAN_WASM || KONAN_ZEPHYR)
     void _ZNKSt3__120__vector_base_commonILb1EE20__throw_length_errorEv(void) {
         Konan_abort("TODO: throw_length_error not implemented.");
     }
@@ -380,7 +371,7 @@ extern "C" {
     }
 #endif
 
-#if KONAN_WASM
+#ifdef KONAN_WASM
     // Some string.h functions.
     void *memcpy(void *dst, const void *src, size_t n) {
         for (long i = 0; i != n; ++i)
@@ -429,7 +420,7 @@ extern "C" {
     }
 #endif
 
-#if KONAN_ZEPHYR
+#ifdef KONAN_ZEPHYR
     RUNTIME_USED void Konan_abort(const char*) {
         // TODO: so how do we support abort for embedded? Do nothing for now.
     }

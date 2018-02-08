@@ -10,13 +10,13 @@
 #include <gpio.h>
 
 /* Change this if you have an LED connected to a custom port */
-#define PORT	LED0_GPIO_PORT
+#define PORT    LED0_GPIO_PORT
 
 /* Change this if you have an LED connected to a custom pin */
-#define LED	LED0_GPIO_PIN
+#define LED     LED0_GPIO_PIN
 
 /* 1000 msec = 1 sec */
-#define SLEEP_TIME 	100
+#define SLEEP_TIME 	1000
 
 void blinky(int value)
 {
