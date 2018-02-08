@@ -168,7 +168,7 @@ task start(dependsOn: "${hostName}Start")
 
 // These files are built before the 'dist' is complete,
 // so we provide custom values for
-// --runtime, --properties, --local_dir, -library and -Djava.library.path
+// konan.home, --runtime, -Djava.library.path etc
 
 targetList.each { target ->
     def konanJvmArgs = ["-ea",

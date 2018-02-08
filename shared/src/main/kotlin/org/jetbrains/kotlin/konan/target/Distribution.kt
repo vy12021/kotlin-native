@@ -86,4 +86,4 @@ class Distribution(
 
 fun buildDistribution(konanHomeOverride: String? = null) = Distribution(true, konanHomeOverride, null)
 
-fun customerDistribution(konanHomeOverride: String? = null) = Distribution(false, konanHomeOverride)
+fun customerDistribution(konanHomeOverride: String? = null) = Distribution(false, konanHomeOverride, null)

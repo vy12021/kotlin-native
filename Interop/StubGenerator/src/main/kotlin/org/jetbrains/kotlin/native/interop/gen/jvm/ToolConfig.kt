@@ -20,9 +20,10 @@ import org.jetbrains.kotlin.konan.target.*
 import org.jetbrains.kotlin.konan.util.visibleName
 import org.jetbrains.kotlin.native.interop.gen.jvm.KotlinPlatform
 
-class ToolConfig(userProvidedTargetName: String?, userProvidedConfigDir: String?, val flavor: KotlinPlatform) {
+class ToolConfig(userProvidedTargetName: String?, flavor: KotlinPlatform) {
 
-    private val distribution = userProvidedConfigDir ?. let { buildDistribution(it) } ?: customerDistribution()
+    private val konanHome = System.getProperty("konan.home")
+    private val distribution = customerDistribution(konanHome)
     private val platformManager = PlatformManager(distribution)
     private val targetManager = platformManager.targetManager(userProvidedTargetName)
     private val host = HostManager.host
