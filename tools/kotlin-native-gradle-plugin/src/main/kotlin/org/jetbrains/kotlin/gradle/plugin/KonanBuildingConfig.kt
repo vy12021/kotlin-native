@@ -27,8 +27,8 @@ import org.gradle.api.plugins.BasePlugin
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.util.ConfigureUtil
 import org.jetbrains.kotlin.gradle.plugin.tasks.KonanBuildingTask
-import org.jetbrains.kotlin.konan.target.*
-import org.jetbrains.kotlin.konan.util.visibleName
+import org.jetbrains.kotlin.konan.target.HostManager
+import org.jetbrains.kotlin.konan.target.KonanTarget
 import java.io.File
 
 /** Base class for all Kotlin/Native artifacts. */

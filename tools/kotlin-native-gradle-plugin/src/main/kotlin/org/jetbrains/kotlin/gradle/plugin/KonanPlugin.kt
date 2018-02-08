@@ -23,9 +23,9 @@ import org.gradle.api.plugins.BasePlugin
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 import org.jetbrains.kotlin.gradle.plugin.KonanPlugin.Companion.COMPILE_ALL_TASK_NAME
 import org.jetbrains.kotlin.gradle.plugin.tasks.*
-import org.jetbrains.kotlin.konan.target.*
-import org.jetbrains.kotlin.konan.target.HostManager
-import org.jetbrains.kotlin.konan.util.visibleName
+import org.jetbrains.kotlin.konan.target.KonanTarget
+import org.jetbrains.kotlin.konan.target.PlatformManager
+import org.jetbrains.kotlin.konan.target.customerDistribution
 import java.io.File
 import java.util.*
 import javax.inject.Inject
@@ -75,17 +75,13 @@ internal val Project.konanArtifactsContainer: NamedDomainObjectContainer<KonanBu
             as NamedDomainObjectContainer<KonanBuildingConfig<*>>
 
 internal val Project.platformManager: PlatformManager
-    get() {
-        return findProperty("platformManager") as PlatformManager? ?: PlatformManager(customerDistribution(konanHome))
-    }
+    get() = findProperty("platformManager") as PlatformManager? ?:
+            PlatformManager(customerDistribution(konanHome))
 
 internal val Project.konanTargets: List<KonanTarget>
-    get() {
-        return platformManager.toKonanTargets(konanExtension.targets)
+    get() = platformManager.toKonanTargets(konanExtension.targets)
                 .filter{ platformManager.isEnabled(it) }
                 .distinct()
-
-    }
 
 @Suppress("UNCHECKED_CAST")
 internal val Project.konanExtension: KonanExtension
@@ -248,7 +244,7 @@ class KonanPlugin @Inject constructor(private val registry: ToolingModelBuilderR
         KONAN_VERSION       ("konan.version"),
         KONAN_BUILD_TARGETS ("konan.build.targets"),
         KONAN_JVM_ARGS      ("konan.jvmArgs"),
-        DOWNLOAD_COMPILER   ("download.compiler"),
+        DOWNLOAD_COMPILER   ("download.compiler")
     }
 
     companion object {

@@ -35,7 +35,6 @@ class PlatformManager(distribution: Distribution = Distribution()) : HostManager
         it to loadConfigurables(it, distribution.properties, DependencyProcessor.defaultDependenciesRoot.absolutePath)
     }.toMap()
 
-    //private val host = HostManager.host
     private val platforms = loaders.map {
         it.key to Platform(it.value)
     }.toMap()

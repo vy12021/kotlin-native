@@ -39,6 +39,10 @@
 extern "C" void Konan_abort(const char*);
 extern "C" void Konan_exit(int32_t status);
 #endif
+#ifdef KONAN_ZEPHYR
+// In Zephyr's Newlib strnlen(3) is not included from string.h by default.
+extern "C" size_t strnlen(const char* buffer, size_t maxSize);
+#endif
 
 namespace konan {
 
@@ -424,6 +428,7 @@ extern "C" {
     RUNTIME_USED void Konan_abort(const char*) {
         // TODO: so how do we support abort for embedded? Do nothing for now.
     }
+
     /* Support the alias for the __aeabi_memset which may
        assume memory alignment.  */
     RUNTIME_USED void __aeabi_memset4 (void *dest, size_t n, int c)
