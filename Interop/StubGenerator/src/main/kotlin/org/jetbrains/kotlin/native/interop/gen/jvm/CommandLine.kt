@@ -18,6 +18,8 @@ package org.jetbrains.kotlin.native.interop.tool
 
 import org.jetbrains.kotlin.cli.common.arguments.*
 
+// TODO: unify camel and snake cases.
+// Possible solution is to accept both cases
 open class CommonInteropArguments : CommonToolArguments() {
     @Argument(value = "-flavor", valueDescription = "<flavor>", description = "One of: jvm, native or wasm")
     var flavor: String? = null
