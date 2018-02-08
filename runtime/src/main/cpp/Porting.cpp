@@ -35,7 +35,7 @@
 #include "Common.h"
 #include "Porting.h"
 
-#if KONAN_WASM || __ZEPHYR__
+#if KONAN_WASM || KONAN_ZEPHYR
 extern "C" void Konan_abort(const char*);
 extern "C" void Konan_exit(int32_t status);
 #endif
@@ -71,7 +71,7 @@ void consoleErrorUtf8(const void* utf8, uint32_t sizeBytes) {
 }
 
 uint32_t consoleReadUtf8(void* utf8, uint32_t maxSizeBytes) {
-#ifdef __ZEPHYR__
+#ifdef KONAN_ZEPHYR
   return 0;
 #else 
   char* result = ::fgets(reinterpret_cast<char*>(utf8), maxSizeBytes - 1, stdin);
@@ -129,7 +129,7 @@ static void onThreadExitInit() {
 
 void onThreadExit(void (*destructor)()) {
 #if KONAN_NO_THREADS
-#if KONAN_WASM || __ZEPHYR__
+#if KONAN_WASM || KONAN_ZEPHYR
   // No way to do that.
 #else
 #error "How to do onThreadExit()?"
@@ -150,7 +150,7 @@ void abort(void) {
   ::abort();
 }
 
-#if KONAN_WASM || __ZEPHYR__
+#if KONAN_WASM || KONAN_ZEPHYR
 void exit(int32_t status) {
   Konan_exit(status);
 }
@@ -164,7 +164,7 @@ void exit(int32_t status) {
 // memcpy/memmove are not here intentionally, as frequently implemented/optimized
 // by C compiler.
 void* memmem(const void *big, size_t bigLen, const void *little, size_t littleLen) {
-#if KONAN_WINDOWS || KONAN_WASM || __ZEPHYR__
+#if KONAN_WINDOWS || KONAN_WASM || KONAN_ZEPHYR
   for (size_t i = 0; i + littleLen <= bigLen; ++i) {
     void* pos = ((char*)big) + i;
     if (::memcmp(little, pos, littleLen) == 0) return pos;
@@ -187,11 +187,11 @@ int snprintf(char* buffer, size_t size, const char* format, ...) {
 
 
 size_t strnlen(const char* buffer, size_t maxSize) {
-#if __ZEPHYR__
-  return strnlen(buffer, maxSize);
-#else
+//#if KONAN_ZEPHYR
+//  return strnlen(buffer, maxSize);
+//#else
   return ::strnlen(buffer, maxSize);
-#endif
+//#endif
 }
 
 // Memory operations.
@@ -224,7 +224,7 @@ void free(void* pointer) {
 
 #if KONAN_INTERNAL_NOW
 
-#ifdef __ZEPHYR__
+#ifdef KONAN_ZEPHYR
 void Konan_date_now(uint64_t* arg) {
     //return 0;
 }
@@ -328,7 +328,7 @@ long getpagesize() {
 
 extern "C" {
 // TODO: get rid of these.
-#if KONAN_WASM || __ZEPHYR__
+#if KONAN_WASM || KONAN_ZEPHYR
     void _ZNKSt3__120__vector_base_commonILb1EE20__throw_length_errorEv(void) {
         Konan_abort("TODO: throw_length_error not implemented.");
     }
@@ -433,7 +433,7 @@ extern "C" {
     }
 #endif
 
-#if __ZEPHYR__
+#if KONAN_ZEPHYR
     RUNTIME_USED void Konan_abort(const char*) {
         // Do nothing.
     }
@@ -467,5 +467,5 @@ extern "C" {
     {
       __aeabi_memset (dest, n, 0);
     }
-#endif // __ZEPHYR__
+#endif // KONAN_ZEPHYR
 }

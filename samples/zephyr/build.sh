@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 
 BOARD=stm32f4_disco
+export ZEPHYR_BASE="PLEASE_SET_ZEPHYR_BASE"
+
+if [ "$ZEPHYR_BASE" == "PLEASE_SET_ZEPHYR_BASE" ] ; then
+    echo "Please set ZEPHYR_BASE in this build.sh."
+    exit 1
+fi
 
 DIR=$(cd "$(dirname "${BASH_SOURCE[0]}" )" && pwd )
 
@@ -20,13 +26,11 @@ mkdir -p $DIR/build && cd $DIR/build
 
 konanc $DIR/src/main.kt -target zephyr_$BOARD -linkerOpts -L$GCC_ARM/arm-none-eabi/lib/thumb -linkerOpts -lsupc++ -opt || exit 1
 
-DEP="$HOME/.konan/dependencies"
-export ZEPHYR_BASE=/Users/jetbrains/kotlin-native/zephyr/
 export ZEPHYR_GCC_VARIANT=gccarmemb
 export GCCARMEMB_TOOLCHAIN_PATH=$GCC_ARM
 
-[ -f CMakeCache.txt ] || cmake -DCMAKE_VERBOSE_MAKEFILE=ON -DBOARD=$BOARD ..
-make 
+[ -f CMakeCache.txt ] || cmake -DCMAKE_VERBOSE_MAKEFILE=ON -DBOARD=$BOARD .. || exit 1
+make || exit 1
 
 # make flash
 #
