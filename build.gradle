@@ -386,7 +386,7 @@ task uploadBundle {
                 server: project.findProperty("cdnUrl") ?: System.getenv("CDN_URL"),
                 userid: project.findProperty("cdnUser") ?: System.getenv("CDN_USER"),
                 password: project.findProperty("cdnPass") ?: System.getenv("CDN_PASS"),
-                remoteDir: "/builds/$kind/$konanVersion/${TargetManager.simpleOsName()}"
+                remoteDir: "/builds/$kind/$konanVersion/${HostManager.simpleOsName()}"
         ]
         ant {
             taskdef(name: 'ftp',

@@ -22,8 +22,6 @@ import org.jetbrains.kotlin.backend.konan.util.suffixIfNot
 import org.jetbrains.kotlin.konan.file.File
 import org.jetbrains.kotlin.konan.target.Distribution
 import org.jetbrains.kotlin.konan.target.KonanTarget
-import org.jetbrains.kotlin.konan.target.TargetManager
-import org.jetbrains.kotlin.konan.util.visibleName
 
 interface SearchPathResolver {
     val searchRoots: List<File>
