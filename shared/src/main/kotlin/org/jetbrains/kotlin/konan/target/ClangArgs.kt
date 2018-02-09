@@ -115,7 +115,7 @@ class ClangArgs(private val configurables: Configurables) : Configurables by con
                 listOf("-DUSE_GCC_UNWIND=1", "-DUSE_ELF_SYMBOLS=1", "-DELFSIZE=32")
 
             KonanTarget.MINGW ->
-                listOf("-DUSE_GCC_UNWIND=1", "-DUSE_PE_COFF_SYMBOLS=1", "-DKONAN_WINDOWS=1")
+                listOf("-DUSE_GCC_UNWIND=1", "-DUSE_PE_COFF_SYMBOLS=1", "-DKONAN_WINDOWS=1", "-DKONAN_NO_MEMMEM=1")
 
             KonanTarget.MACBOOK ->
                 listOf("-DKONAN_OSX=1", "-DKONAN_OBJC_INTEROP=1")
@@ -134,10 +134,13 @@ class ClangArgs(private val configurables: Configurables) : Configurables by con
 
             KonanTarget.WASM32 ->
                 listOf("-DKONAN_WASM=1", "-DKONAN_NO_FFI=1", "-DKONAN_NO_THREADS=1", "-DKONAN_NO_EXCEPTIONS=1",
-                        "-DKONAN_INTERNAL_DLMALLOC=1", "-DKONAN_INTERNAL_SNPRINTF=1", "-DKONAN_INTERNAL_NOW=1")
+                        "-DKONAN_NO_MATH=1", "-DKONAN_INTERNAL_DLMALLOC=1", "-DKONAN_INTERNAL_SNPRINTF=1",
+                        "-DKONAN_INTERNAL_NOW=1", "-DKONAN_NO_MEMMEM")
+
             is KonanTarget.ZEPHYR ->
-                listOf( "-DKONAN_ZEPHYR=1", "-DKONAN_NO_THREADS=1", "-DKONAN_NO_EXCEPTIONS=1",
-                        "-DKONAN_INTERNAL_SNPRINTF=1", "-DKONAN_INTERNAL_NOW=1")
+                listOf( "-DKONAN_ZEPHYR=1", "-DKONAN_NO_FFI=1", "-DKONAN_NO_THREADS=1", "-DKONAN_NO_EXCEPTIONS=1",
+                        "-DKONAN_NO_MATH=1", "-DKONAN_INTERNAL_SNPRINTF=1", "-DKONAN_INTERNAL_NOW=1",
+                        "-DKONAN_NO_MEMMEM=1")
         }
 
     private val host = HostManager.host

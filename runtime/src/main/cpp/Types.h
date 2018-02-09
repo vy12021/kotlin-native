@@ -20,7 +20,7 @@
 #include <stdlib.h>
 
 #if (KONAN_WASM || KONAN_ZEPHYR) && !defined(assert)
-// assert() is needed by WASM STL.
+// assert() is needed by STLport.
 #define assert(cond) if (!(cond)) abort()
 #endif
 

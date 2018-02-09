@@ -168,7 +168,7 @@ void exit(int32_t status) {
 // memcpy/memmove are not here intentionally, as frequently implemented/optimized
 // by C compiler.
 void* memmem(const void *big, size_t bigLen, const void *little, size_t littleLen) {
-#if KONAN_WINDOWS || KONAN_WASM || KONAN_ZEPHYR
+#if KONAN_NO_MEMMEM
   for (size_t i = 0; i + littleLen <= bigLen; ++i) {
     void* pos = ((char*)big) + i;
     if (::memcmp(little, pos, littleLen) == 0) return pos;
@@ -426,7 +426,7 @@ extern "C" {
 
 #ifdef KONAN_ZEPHYR
     RUNTIME_USED void Konan_abort(const char*) {
-        // TODO: so how do we support abort for embedded? Do nothing for now.
+        while(1) {}
     }
 
     /* Support the alias for the __aeabi_memset which may

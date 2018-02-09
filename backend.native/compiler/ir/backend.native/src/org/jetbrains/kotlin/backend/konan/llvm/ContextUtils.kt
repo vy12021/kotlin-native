@@ -425,7 +425,6 @@ internal class Llvm(val context: Context, val llvmModule: LLVMModuleRef) {
 
     private val personalityFunctionName = when (target) {
         KonanTarget.MINGW -> "__gxx_personality_seh0"
-        //is KonanTarget.ZEPHYR -> "__gcc_personality_v0"
         else -> "__gxx_personality_v0"
     }
 
