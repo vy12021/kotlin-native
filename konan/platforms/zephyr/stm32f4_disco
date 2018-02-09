@@ -20,10 +20,6 @@
 quadruple.zephyr_stm32f4_disco = armv7m-none-eabi
 targetSysRoot.zephyr_stm32f4_disco = target-sysroot-2-wasm
 entrySelector.zephyr_stm32f4_disco = --defsym main=Konan_main
-llvmLtoFlags.zephyr_stm32f4_disco =
-llvmLtoOptFlags.zephyr_stm32f4_disco = -O3 -function-sections
-llvmLtoNooptFlags.zephyr_stm32f4_disco = -O1
-llvmLtoDynamicFlags.zephyr_stm32f4_disco = -relocation-model=pic
 
 boardSpecificClangFlags.zephyr_stm32f4_disco = -mabi=aapcs -mthumb -mcpu=cortex-m4
 

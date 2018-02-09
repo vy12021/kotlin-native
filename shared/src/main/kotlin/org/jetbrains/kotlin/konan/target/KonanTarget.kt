@@ -119,11 +119,12 @@ open class HostManager internal constructor(protected val distribution: Distribu
     // TODO: need a better way to enumerated predefined targets.
     private val predefinedTargets = listOf(ANDROID_ARM32, ANDROID_ARM64, IPHONE, IPHONE_SIM, LINUX, MINGW, MACBOOK, RASPBERRYPI, LINUX_MIPS32, LINUX_MIPSEL32, WASM32)
 
-    // TODO: We hardcode the fact that the only configurable target is zephyr for now.
     private val zephyrSubtargets = distribution.availableSubTarget("zephyr").map { ZEPHYR(it) }
 
+    private val configurableSubtargets = zephyrSubtargets
+
     val targetValues: List<KonanTarget> by lazy {
-        predefinedTargets + zephyrSubtargets
+        predefinedTargets + configurableSubtargets
     }
 
     val targets = targetValues.associate{ it.visibleName to it }
